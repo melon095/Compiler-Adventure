@@ -1,4 +1,8 @@
-﻿namespace JLox;
+﻿
+using JLox.src.AST;
+using JLox.src.Expr;
+
+namespace JLox;
 
 internal class Program
 {
@@ -6,6 +10,18 @@ internal class Program
 
     static int Main(string[] args)
     {
+        var expr = new BinaryExpression(
+                       new UnaryExpression(
+                                          new Token(TokenType.Minus, "-", null, 1),
+                                                         new LiteralExpression(123)),
+                                  new Token(TokenType.Star, "*", null, 1),
+                                             new GroupingExpression(
+                                                                new LiteralExpression(45.67)));
+
+        Console.WriteLine(new AstPrinter().Print(expr));
+
+        return 0;
+
         if (args.Length > 1)
         {
             Console.WriteLine("Usage: jlox [script]");
