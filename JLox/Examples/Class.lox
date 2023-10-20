@@ -1,0 +1,49 @@
+class Breakfast
+{
+	init(meat, bread) 
+	{
+		self.meat = meat;
+		self.bread = bread;
+	}
+
+	Cook(self)
+	{
+		print "Eggs a-fryin'!";
+	}
+
+	Serve(self, who)
+	{
+		print "Enjoy your " + self.meat + " and " + self.bread + ", " + who + "!";
+	}
+
+	StaticMethod()
+	{
+		print "Static method called!";
+	}
+}
+
+var breakfast = Breakfast("bacon", "toast");
+breakfast.Cook();
+breakfast.Serve("Dear Reader");
+
+// breakfast.StaticMethod(); // Error: StaticMethod is not a function
+
+Breakfast.StaticMethod(); // Static method called!
+
+class Brunch : Breakfast
+{
+	init(meat, bread, drink)
+	{
+		super.init(meat, bread);
+		self.drink = drink;
+	}
+
+	Drink(self)
+	{
+		print "How about a " + self.drink + "?";
+	}
+}
+
+var brunch = Brunch("sausage", "bagel");
+brunch.Serve("Dear Reader");
+brunch.Drink();

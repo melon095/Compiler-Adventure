@@ -1,0 +1,36 @@
+fn AddPair(a, b) 
+{
+	return a + b;
+}
+
+fn Identity(a)
+{
+	return a;
+}
+
+print Identity(AddPair(1, 2));
+
+fn outerFunctin()
+{
+	fn innerFunction()
+	{
+		print "Hello from inner function";
+	}
+	
+	innerFunction();
+}
+
+fn returnFunction()
+{
+	var outside = "outside";
+
+	fun inner() 
+	{
+		print outside;
+	}
+
+	return inner;
+}
+
+var f = returnFunction();
+f();

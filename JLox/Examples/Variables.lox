@@ -1,0 +1,9 @@
+var variable = "this is a variable";
+
+var nullable; // nil
+
+var breakfast = "bagels";
+print breakfast;
+
+breakfast = "oatmeal";
+print breakfast;

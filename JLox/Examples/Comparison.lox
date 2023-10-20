@@ -1,0 +1,10 @@
+5 < 2; // false
+5 <= 2; // false
+5 > 2; // true
+5 >= 2; // true
+
+1 == 2; // false
+"cat" != "dog"; // true
+
+3.14 == "pi"; // false
+123 == "123"; // true

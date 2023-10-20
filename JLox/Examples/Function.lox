@@ -1,0 +1,11 @@
+fn MakeBreakfast(a, b, c)
+{
+	print "Making breakfast!";
+	print a;
+	print b;
+	print c;
+
+	return 0;
+}
+
+print MakeBreakfast("eggs", "bacon", "toast");
