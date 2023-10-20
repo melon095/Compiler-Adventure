@@ -11,6 +11,7 @@ internal enum TokenType
     Dot,
     Minus,
     Plus,
+    Colon,
     Semicolon,
     Slash,
     Star,

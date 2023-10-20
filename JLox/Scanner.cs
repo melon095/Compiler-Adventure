@@ -103,6 +103,12 @@ internal class Scanner
                 }
                 break;
 
+            case ':':
+                {
+                    AddToken(TokenType.Colon);
+                }
+                break;
+
             case ';':
                 {
                     AddToken(TokenType.Semicolon);
@@ -113,7 +119,6 @@ internal class Scanner
             case '*':
                 {
                     AddToken(TokenType.Star);
-
                 }
                 break;
 
@@ -176,6 +181,39 @@ internal class Scanner
                     {
                         // A comment goes until the end of the line.
                         while (Peek() != '\n' && !AtEnd) Advance();
+                    }
+                    else if (Match('*'))
+                    {
+                        // Multi-line comment
+
+                        var depth = 1;
+
+                        while (depth > 0)
+                        {
+                            if (AtEnd)
+                            {
+                                Program.Error(Line, "Unterminated comment.");
+                                return;
+                            }
+
+                            if (Peek() == '\n')
+                            {
+                                Line++;
+                            }
+
+                            if (Peek() == '/' && PeekNext() == '*')
+                            {
+                                depth++;
+                                Advance();
+                            }
+                            else if (Peek() == '*' && PeekNext() == '/')
+                            {
+                                depth--;
+                                Advance();
+                            }
+
+                            Advance();
+                        }
                     }
                     else
                     {
