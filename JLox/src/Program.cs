@@ -1,4 +1,5 @@
 ﻿
+using JLox.src;
 using JLox.src.AST;
 using JLox.src.Expr;
 
@@ -10,18 +11,6 @@ internal class Program
 
     static int Main(string[] args)
     {
-        var expr = new BinaryExpression(
-                       new UnaryExpression(
-                                          new Token(TokenType.Minus, "-", null, 1),
-                                                         new LiteralExpression(123)),
-                                  new Token(TokenType.Star, "*", null, 1),
-                                             new GroupingExpression(
-                                                                new LiteralExpression(45.67)));
-
-        Console.WriteLine(new AstPrinter().Print(expr));
-
-        return 0;
-
         if (args.Length > 1)
         {
             Console.WriteLine("Usage: jlox [script]");
@@ -77,15 +66,40 @@ internal class Program
 
         var tokens = scanner.ScanTokens();
 
+#if xd
         foreach (var token in tokens)
         {
             Console.WriteLine(token);
         }
+#endif
+
+        Parser parser = new(tokens);
+
+        var expression = parser.Parse();
+
+        if (HadError || expression is null)
+        {
+            return;
+        }
+
+        Console.WriteLine(new AstPrinter().Print(expression));
     }
 
     public static void Error(int line, string message)
     {
         Report(line, string.Empty, message);
+    }
+
+    public static void Error(Token token, string message)
+    {
+        if (token.Type == TokenType.EOF)
+        {
+            Report(token.Line, " at end", message);
+        }
+        else
+        {
+            Report(token.Line, $" at '{token.Lexeme}'", message);
+        }
     }
 
     static void Report(int line, string where, string message)

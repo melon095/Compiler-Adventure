@@ -35,7 +35,8 @@ internal sealed record GroupingExpression(Expression Expression) : Expression
         => visitor.VisitGroupingExpr(this);
 }
 
-internal sealed record LiteralExpression(object Value) : Expression
+// TODO: This should not allow nullable
+internal sealed record LiteralExpression(object? Value) : Expression
 {
     public override T Accept<T>(IVisitor<T> visitor)
         => visitor.VisitLiteralExpr(this);

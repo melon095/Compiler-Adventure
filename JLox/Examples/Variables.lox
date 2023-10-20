@@ -1,8 +1,8 @@
-var variable = "this is a variable";
+let letiable = "this is a letiable";
 
-var nullable; // nil
+let nullable; // nil
 
-var breakfast = "bagels";
+let breakfast = "bagels";
 print breakfast;
 
 breakfast = "oatmeal";

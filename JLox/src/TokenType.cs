@@ -62,7 +62,7 @@ internal enum TokenType
 
     #region Misc
 
-    Eof
+    EOF
 
     #endregion
 }

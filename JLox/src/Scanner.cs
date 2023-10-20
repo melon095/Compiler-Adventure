@@ -42,7 +42,7 @@ internal class Scanner
             ScanToken();
         }
 
-        Tokens.Add(new(TokenType.Eof, Line: Line));
+        Tokens.Add(new(TokenType.EOF, Line: Line));
 
         return Tokens;
     }
@@ -271,22 +271,24 @@ internal class Scanner
         }
     }
 
-    private bool IsDigit(char c)
+    private static bool IsDigit(char c)
         => c >= '0' && c <= '9';
 
-    private bool IsAlpha(char c)
+    private static bool IsAlpha(char c)
         => (c >= 'a' && c <= 'z') ||
            (c >= 'A' && c <= 'Z') ||
            c == '_';
 
-    private bool IsAlphaNumeric(char c)
+    private static bool IsAlphaNumeric(char c)
         => IsAlpha(c) || IsDigit(c);
 
     private char Advance() => Source[Current++];
 
     private void AddToken(TokenType t)
     {
-        Tokens.Add(new(t, Line: Line));
+        var text = Source[Start..Current];
+
+        Tokens.Add(new(t, text, Line: Line));
     }
 
     private void AddToken(TokenType type, object literal)

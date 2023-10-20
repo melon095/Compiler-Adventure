@@ -22,7 +22,7 @@ class Breakfast
 	}
 }
 
-var breakfast = Breakfast("bacon", "toast");
+let breakfast = Breakfast("bacon", "toast");
 breakfast.Cook();
 breakfast.Serve("Dear Reader");
 
@@ -44,6 +44,6 @@ class Brunch : Breakfast
 	}
 }
 
-var brunch = Brunch("sausage", "bagel");
+let brunch = Brunch("sausage", "bagel");
 brunch.Serve("Dear Reader");
 brunch.Drink();

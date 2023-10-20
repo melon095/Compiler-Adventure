@@ -1,22 +1,22 @@
 if (true)
 {
-	var x = true;
+	let x = true;
 	print x;
 }
 else
 {
-	var x = false;
+	let x = false;
 	print x;
 }
 
-var a = 1;
+let a = 1;
 while (a < 10)
 {
 	print a;
 	a = a + 1;
 }
 
-for (var i = 0; i < 10; i = i + 1)
+for (let i = 0; i < 10; i = i + 1)
 {
 	print i;
 }

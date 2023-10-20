@@ -22,7 +22,7 @@ fn outerFunctin()
 
 fn returnFunction()
 {
-	var outside = "outside";
+	let outside = "outside";
 
 	fun inner() 
 	{
@@ -32,5 +32,5 @@ fn returnFunction()
 	return inner;
 }
 
-var f = returnFunction();
+let f = returnFunction();
 f();
