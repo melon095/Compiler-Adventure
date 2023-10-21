@@ -1,26 +1,33 @@
 ﻿
 using JLox.src;
-using JLox.src.AST;
-using JLox.src.Expr;
+using JLox.src.Exceptions;
 
 namespace JLox;
 
 internal class Program
 {
+    static string[] Args = Array.Empty<string>();
+
     static bool HadError = false;
+    static bool HadRuntimeError = false;
+
+    static readonly Interpreter Interpreter = new();
+
+    static bool HasArg(string arg) => Args.Contains(arg);
 
     static int Main(string[] args)
     {
-        if (args.Length > 1)
-        {
-            Console.WriteLine("Usage: jlox [script]");
-            return 1;
-        }
-        else if (args.Length == 1)
+        Args = args;
+
+        var hasFile = args.Any(arg => !arg.StartsWith('-'));
+
+        if (hasFile)
         {
             Console.WriteLine($"Running file {args[0]}");
 
-            RunFile(args[0]);
+            var file = args.First(arg => !arg.StartsWith('-'));
+
+            RunFile(file);
         }
         else
         {
@@ -40,13 +47,20 @@ internal class Program
         {
             Environment.Exit(65);
         }
+
+        if (HadRuntimeError)
+        {
+            Environment.Exit(70);
+        }
     }
 
     static void RunREPL()
     {
+        var ReplLine = 0;
+
         while (true)
         {
-            Console.Write("> ");
+            Console.Write($"jlox[{ReplLine++}]> ");
             var line = Console.ReadLine();
             if (line == null)
             {
@@ -66,23 +80,25 @@ internal class Program
 
         var tokens = scanner.ScanTokens();
 
-#if xd
-        foreach (var token in tokens)
+        if (HasArg("--token")) // TODO: One time check
         {
-            Console.WriteLine(token);
+            foreach (var token in tokens)
+            {
+                Console.WriteLine(token);
+            }
         }
-#endif
 
         Parser parser = new(tokens);
+        var statements = parser.Parse();
 
-        var expression = parser.Parse();
+        Interpreter.Interpret(statements);
+    }
 
-        if (HadError || expression is null)
-        {
-            return;
-        }
+    public static void RuntimeError(RuntimeException ex)
+    {
+        Console.WriteLine($"[Line {ex.Token.Line}]\n{ex.Message}");
 
-        Console.WriteLine(new AstPrinter().Print(expression));
+        HadRuntimeError = true;
     }
 
     public static void Error(int line, string message)

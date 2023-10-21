@@ -1,4 +1,5 @@
 ﻿using JLox.src.Expr;
+using JLox.src.Stmt;
 
 namespace JLox.src;
 
@@ -19,16 +20,23 @@ internal class Parser
         return new ParseException();
     }
 
-    public Expression? Parse()
+    public IEnumerable<Statement> Parse()
     {
+        List<Statement> statements = new();
+
         try
         {
-            return Expression();
+            while (!AtEnd)
+            {
+                statements.Add(Declaration());
+            }
         }
         catch (ParseException)
         {
-            return null;
+            Synchronize();
         }
+
+        return statements;
     }
 
     private bool Check(TokenType type)
@@ -109,12 +117,46 @@ internal class Parser
                 case TokenType.Return:
                     return;
             }
-        }
 
-        Advance();
+            Advance();
+        }
     }
 
-    private Expression Expression() => Equality();
+    private Statement Declaration()
+    {
+        if (Match(TokenType.Let)) return LetDeclaration();
+
+        return Statement();
+    }
+
+    private Statement Statement()
+    {
+        if (Match(TokenType.Print)) return PrintStatement();
+
+        return ExpressionStatement();
+    }
+
+    private Expression Expression() => Assignment();
+
+    private Expression Assignment()
+    {
+        var expr = Equality();
+
+        if (Match(TokenType.Equal))
+        {
+            var equals = Previous;
+            var value = Assignment();
+
+            if (expr is VariableExpression varExpr)
+            {
+                return new AssignmentExpression(varExpr.Name, value);
+            }
+
+            Error(equals, "Invalid assignment target.");
+        }
+
+        return expr;
+    }
 
     private Expression Equality()
     {
@@ -210,6 +252,9 @@ internal class Parser
         if (Match(TokenType.Number, TokenType.String))
             return new LiteralExpression(Previous.Literal);
 
+        if (Match(TokenType.Identifier))
+            return new VariableExpression(Previous);
+
         if (Match(TokenType.LeftParen))
         {
             var expr = Expression();
@@ -218,5 +263,36 @@ internal class Parser
         }
 
         throw Error(Peek(), "Expected expression.");
+    }
+
+    private Statement ExpressionStatement()
+    {
+        var expr = Expression();
+        Consume(TokenType.Semicolon, "Expected ';' after expression.");
+        return new ExpressionStatement(expr);
+    }
+
+    private Statement PrintStatement()
+    {
+        var expr = Expression();
+        Consume(TokenType.Semicolon, "Expected ';' after value.");
+        return new PrintStatement(expr);
+    }
+
+    private Statement LetDeclaration()
+    {
+        var isMutable = Match(TokenType.Mutable);
+
+        var name = Consume(TokenType.Identifier, "Expected variable name.");
+
+        Expression? initializer = null;
+        if (Match(TokenType.Equal))
+        {
+            initializer = Expression();
+        }
+
+        Consume(TokenType.Semicolon, "Expected ';' after variable declaration.");
+
+        return new LetStatement(name, isMutable, initializer);
     }
 }

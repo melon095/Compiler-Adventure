@@ -1,9 +1,17 @@
-let letiable = "this is a letiable";
+﻿let letiable = "this is a letiable 🕴🕴🕴🕴🕴";
 
 let nullable; // nil
 
-let breakfast = "bagels";
+let mut breakfast = "bagels";
 print breakfast;
+print letiable;
 
 breakfast = "oatmeal";
-print breakfast;
+print(breakfast);
+
+let mut lunch = "sandwich";
+print(lunch);
+
+lunch = "salad";
+print(lunch);
+

@@ -56,6 +56,7 @@ internal enum TokenType
     True,
     False,
     Let,
+    Mutable,
     While,
 
     #endregion

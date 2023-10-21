@@ -3,7 +3,7 @@ using System.Text;
 
 namespace JLox.src.AST;
 
-internal class AstPrinter : IVisitor<string>
+internal class AstPrinter : IExpressionVisitor<string>
 {
     private string Parenthesize(string name, params Expression[] exprs)
     {
@@ -25,7 +25,7 @@ internal class AstPrinter : IVisitor<string>
         return expr.Accept(this);
     }
 
-    public string VisitAssignExpr(AssignExpression expr)
+    public string VisitAssignmentExpr(AssignmentExpression expr)
     {
         throw new NotImplementedException();
     }

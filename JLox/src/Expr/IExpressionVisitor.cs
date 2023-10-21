@@ -1,8 +1,8 @@
 ﻿namespace JLox.src.Expr;
 
-internal interface IVisitor<T>
+internal interface IExpressionVisitor<T>
 {
-    T VisitAssignExpr(AssignExpression expr);
+    T VisitAssignmentExpr(AssignmentExpression expr);
     T VisitBinaryExpr(BinaryExpression expr);
     T VisitCallExpr(CallExpression expr);
     T VisitGetExpr(GetExpression expr);
