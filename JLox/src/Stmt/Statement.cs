@@ -4,46 +4,72 @@ namespace JLox.src.Stmt;
 
 internal abstract record Statement
 {
-    public abstract T Accept<T>(IStatementVisitor<T> visitor);
+    public abstract object? Execute(Interpreter ip);
 };
 
 internal sealed record AssignmentStatement(Token Name, Expression Value) : Statement
 {
-    public override T Accept<T>(IStatementVisitor<T> visitor)
-        => visitor.VisitAssignmentStatement(this);
+    public override object? Execute(Interpreter ip)
+    {
+        throw new NotImplementedException();
+    }
 }
 
 internal sealed record BlockStatement(IEnumerable<Statement> Statements) : Statement
 {
-    public override T Accept<T>(IStatementVisitor<T> visitor)
-        => visitor.VisitBlockStatement(this);
+    public override object? Execute(Interpreter ip)
+    {
+        ip.ExecuteBlock(Statements, new(ip.Environment));
+        return null;
+    }
 }
 
 internal sealed record ExpressionStatement(Expression Expression) : Statement
 {
-    public override T Accept<T>(IStatementVisitor<T> visitor)
-        => visitor.VisitExpressionStatement(this);
+    public override object? Execute(Interpreter ip) => ip.Evaluate(Expression);
+
 }
 internal sealed record PrintStatement(Expression Expression) : Statement
 {
-    public override T Accept<T>(IStatementVisitor<T> visitor)
-        => visitor.VisitPrintStatement(this);
+    public override object? Execute(Interpreter ip)
+    {
+        var value = ip.Evaluate(Expression);
+
+        Console.WriteLine(Stringify.ToString(value));
+
+        return null;
+    }
 }
 
 internal sealed record LetStatement(Token Name, bool Mutable, Expression? Initializer) : Statement
 {
-    public override T Accept<T>(IStatementVisitor<T> visitor)
-        => visitor.VisitLetStatement(this);
+    public override object? Execute(Interpreter ip)
+    {
+        object? value = null;
+
+        if (Initializer != null)
+        {
+            value = ip.Evaluate(Initializer);
+        }
+
+        ip.Environment.Define(Name.Lexeme, new(Mutable, value));
+
+        return null;
+    }
 }
 
 internal sealed record UnaryStatement(Token Operator, Expression Right) : Statement
 {
-    public override T Accept<T>(IStatementVisitor<T> visitor)
-        => visitor.VisitUnaryStatement(this);
+    public override object? Execute(Interpreter ip)
+    {
+        throw new NotImplementedException();
+    }
 }
 
 internal sealed record VariableStatement(Token Name) : Statement
 {
-    public override T Accept<T>(IStatementVisitor<T> visitor)
-        => visitor.VisitVariableStatement(this);
+    public override object? Execute(Interpreter ip)
+    {
+        throw new NotImplementedException();
+    }
 }
