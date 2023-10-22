@@ -2,6 +2,8 @@
 using JLox.src;
 using JLox.src.Exceptions;
 
+// TODO: Remove the Visitor thing and instead have each statement/expression handle itself internally
+
 namespace JLox;
 
 internal class Program
@@ -17,14 +19,15 @@ internal class Program
 
     static int Main(string[] args)
     {
+        // Why
+        Console.OutputEncoding = System.Text.Encoding.Unicode;
+
         Args = args;
 
         var hasFile = args.Any(arg => !arg.StartsWith('-'));
 
         if (hasFile)
         {
-            Console.WriteLine($"Running file {args[0]}");
-
             var file = args.First(arg => !arg.StartsWith('-'));
 
             RunFile(file);
@@ -73,10 +76,7 @@ internal class Program
 
     static void Run(string inputCode)
     {
-        Scanner scanner = new()
-        {
-            Source = inputCode
-        };
+        Scanner scanner = new(inputCode);
 
         var tokens = scanner.ScanTokens();
 
@@ -96,7 +96,7 @@ internal class Program
 
     public static void RuntimeError(RuntimeException ex)
     {
-        Console.WriteLine($"[Line {ex.Token.Line}]\n{ex.Message}");
+        Console.Error.WriteLine($"[Line {ex.Token.Line}]\n{ex.Message}");
 
         HadRuntimeError = true;
     }
@@ -120,7 +120,7 @@ internal class Program
 
     static void Report(int line, string where, string message)
     {
-        Console.WriteLine($"[line {line}] Error{where}: {message}");
+        Console.Error.WriteLine($"[line {line}] Error{where}: {message}");
         HadError = true;
     }
 }

@@ -23,30 +23,63 @@ internal class Key
 // System.Environment xP
 internal class LoxEnvironment
 {
-    private readonly Dictionary<string, Key> GlobalScope = new();
+    /// <summary>
+    /// Enclosing holds the parents scope if this is a subscope.
+    /// 
+    /// When the scope is global, this is null.
+    /// </summary>
+    private readonly LoxEnvironment? Enclosing;
 
-    public void Define(string name, Key key) => GlobalScope[name] = key;
+    private readonly Dictionary<string, Key> LocalScope = new();
+
+    /// <summary>
+    /// Executed for the global scope.
+    /// </summary>
+    public LoxEnvironment()
+    {
+        Enclosing = null;
+    }
+
+    /// <summary>
+    /// Executed when entering a new scope. For example when entering a function or a block.
+    /// </summary>
+    public LoxEnvironment(LoxEnvironment parentScope)
+    {
+        Enclosing = parentScope;
+    }
+
+    public void Define(string name, Key key) => LocalScope[name] = key;
 
     public object? Get(Token name)
     {
-        if (GlobalScope.TryGetValue(name.Lexeme, out var value))
+        if (LocalScope.TryGetValue(name.Lexeme, out var value))
         {
             return value.Value;
         }
+
+        // Check the parents scope for the variable. This is a recursive call that eventually reaches the global scope.
+        if (Enclosing is not null) return Enclosing.Get(name);
 
         throw new RuntimeException(name, $"Undefined variable '{name.Lexeme}'");
     }
 
     public void Assign(Token name, object? value)
     {
-        if (!GlobalScope.TryGetValue(name.Lexeme, out var key))
+        if (!LocalScope.TryGetValue(name.Lexeme, out var key))
         {
+            if (Enclosing is not null)
+            {
+                // This will throw if the parent/global scope does not contain the variable.
+                Enclosing.Assign(name, value);
+                return;
+            }
+
             throw new RuntimeException(name, $"Undefined variable '{name.Lexeme}'");
         }
 
         if (key.Mutable)
         {
-            GlobalScope[name.Lexeme].Value = value;
+            LocalScope[name.Lexeme].Value = value;
             return;
         }
 

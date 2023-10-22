@@ -132,6 +132,7 @@ internal class Parser
     private Statement Statement()
     {
         if (Match(TokenType.Print)) return PrintStatement();
+        if (Match(TokenType.LeftBrace)) return new BlockStatement(BlockStatement());
 
         return ExpressionStatement();
     }
@@ -268,6 +269,13 @@ internal class Parser
     private Statement ExpressionStatement()
     {
         var expr = Expression();
+
+        // kek
+        if (expr is VariableExpression vexpr && vexpr.Name.Lexeme == "var")
+        {
+            throw Error(Peek(), "Unknown keyword 'var' did you mean 'let'?");
+        }
+
         Consume(TokenType.Semicolon, "Expected ';' after expression.");
         return new ExpressionStatement(expr);
     }
@@ -294,5 +302,17 @@ internal class Parser
         Consume(TokenType.Semicolon, "Expected ';' after variable declaration.");
 
         return new LetStatement(name, isMutable, initializer);
+    }
+
+    private List<Statement> BlockStatement()
+    {
+        var statements = new List<Statement>();
+
+        while (!Check(TokenType.RightBrace) && !AtEnd)
+            statements.Add(Declaration());
+
+        Consume(TokenType.RightBrace, "Expected '}' after block.");
+
+        return statements;
     }
 }

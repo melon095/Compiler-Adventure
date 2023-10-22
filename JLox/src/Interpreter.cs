@@ -68,6 +68,25 @@ internal class Interpreter : IExpressionVisitor<object?>, IStatementVisitor<obje
         stmt.Accept(this);
     }
 
+    private void ExecuteBlock(IEnumerable<Statement> statements, LoxEnvironment environment)
+    {
+        var previous = Environment;
+
+        try
+        {
+            Environment = environment;
+
+            foreach (var stmt in statements)
+            {
+                Execute(stmt);
+            }
+        }
+        finally
+        {
+            Environment = previous;
+        }
+    }
+
     #region ExpressionVisitor
 
     public object? VisitAssignmentExpr(AssignmentExpression expr)
@@ -231,17 +250,16 @@ internal class Interpreter : IExpressionVisitor<object?>, IStatementVisitor<obje
     public object? VisitVariableExpr(VariableExpression expr)
           => Environment.Get(expr.Name);
 
-
-    #endregion
-
-    #region StatementVisitor
-
     public object? VisitExpressionStatement(ExpressionStatement stmt)
     {
         Evaluate(stmt.Expression);
 
         return null;
     }
+
+    #endregion
+
+    #region StatementVisitor
 
     public object? VisitPrintStatement(PrintStatement stmt)
     {
@@ -254,7 +272,8 @@ internal class Interpreter : IExpressionVisitor<object?>, IStatementVisitor<obje
 
     public object? VisitBlockStatement(BlockStatement stmt)
     {
-        throw new NotImplementedException();
+        ExecuteBlock(stmt.Statements, new(Environment));
+        return null;
     }
 
     public object? VisitLetStatement(LetStatement stmt)

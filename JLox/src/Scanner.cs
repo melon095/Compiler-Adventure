@@ -25,7 +25,7 @@ internal class Scanner
         { "while",      TokenType.While     },
     };
 
-    public required string Source { get; init; }
+    public string Source { get; private set; }
 
     private readonly List<Token> Tokens = new();
 
@@ -33,6 +33,11 @@ internal class Scanner
     private int Current = 0;
     private int Line = 1;
     private bool AtEnd => Current >= Source.Length;
+
+    public Scanner(string source)
+    {
+        Source = source;
+    }
 
     public List<Token> ScanTokens()
     {
@@ -283,7 +288,10 @@ internal class Scanner
     private static bool IsAlphaNumeric(char c)
         => IsAlpha(c) || IsDigit(c);
 
-    private char Advance() => Source[Current++];
+    private char Advance()
+    {
+        return Source[Current++];
+    }
 
     private void AddToken(TokenType t)
     {
