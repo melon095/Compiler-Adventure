@@ -1,0 +1,24 @@
+if true do: print("One-liner if else") else: print(":D");
+
+let myCondition = 42 == 42;
+
+if myCondition 
+{
+	print("42 == 42 is true!");
+}
+
+if myCondition == true 
+{
+	print("myCondition is true!");
+}
+
+let myFalseCondition = 42 == 43;
+
+if myFalseCondition 
+{
+	print("42 == 43 is true!");
+} 
+else 
+{
+	print("42 == 43 is false!");
+}

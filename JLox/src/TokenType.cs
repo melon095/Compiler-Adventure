@@ -43,6 +43,7 @@ internal enum TokenType
 
     And,
     Class,
+    Do,
     Else,
     Function,
     For,

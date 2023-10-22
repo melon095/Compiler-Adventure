@@ -8,6 +8,7 @@ internal class Scanner
     {
         { "and",        TokenType.And       },
         { "class",      TokenType.Class     },
+        { "do",         TokenType.Do        },
         { "else",       TokenType.Else      },
         { "false",      TokenType.False     },
         { "for",        TokenType.For       },

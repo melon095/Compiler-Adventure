@@ -7,7 +7,7 @@ internal static class Stringify
         var text = d.ToString();
 
         if (text.EndsWith(".0"))
-            text = text.Substring(0, text.Length - 2);
+            text = text[..^2];
 
         return text;
     }

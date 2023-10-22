@@ -131,6 +131,7 @@ internal class Parser
 
     private Statement Statement()
     {
+        if (Match(TokenType.If)) return IfStatement();
         if (Match(TokenType.Print)) return PrintStatement();
         if (Match(TokenType.LeftBrace)) return new BlockStatement(BlockStatement());
 
@@ -240,14 +241,11 @@ internal class Parser
         if (Match(TokenType.False))
             return new LiteralExpression(false);
 
-
         if (Match(TokenType.True))
             return new LiteralExpression(true);
 
-
         if (Match(TokenType.Nil))
             return new LiteralExpression(null);
-
 
         // TODO: Handle if the Literal is null
         if (Match(TokenType.Number, TokenType.String))
@@ -280,10 +278,47 @@ internal class Parser
         return new ExpressionStatement(expr);
     }
 
+    private Statement IfStatement()
+    {
+        // condition { thenBranch } else { elseBranch }
+        // condition do: thenBranch, else: elseBranch
+
+        var condition = Expression();
+
+        if (Match(TokenType.Do))
+        {
+            Consume(TokenType.Colon, "Expected ':' after 'do'.");
+
+            var thenBranch = Statement();
+            Statement? elseBranch = null;
+
+            if (Match(TokenType.Else))
+            {
+                Consume(TokenType.Colon, "Expected ':' after 'else'.");
+                elseBranch = Statement();
+            }
+
+            return new IfStatement(condition, thenBranch, elseBranch);
+        }
+        else // This else branch is only cause of variables with same name.
+        {
+            var thenBranch = Statement();
+            var elseBranch = Match(TokenType.Else)
+                ? Statement()
+                : null;
+
+            return new IfStatement(condition, thenBranch, elseBranch);
+        }
+    }
+
     private Statement PrintStatement()
     {
         var expr = Expression();
-        Consume(TokenType.Semicolon, "Expected ';' after value.");
+
+        // Ugly hack to not force semicolon after a print inside of a one-liner if statement
+        if (Tokens[Current + 1].Type != TokenType.Colon)
+            Consume(TokenType.Semicolon, "Expected ';' after value.");
+
         return new PrintStatement(expr);
     }
 

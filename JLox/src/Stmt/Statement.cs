@@ -27,8 +27,25 @@ internal sealed record BlockStatement(IEnumerable<Statement> Statements) : State
 internal sealed record ExpressionStatement(Expression Expression) : Statement
 {
     public override object? Execute(Interpreter ip) => ip.Evaluate(Expression);
-
 }
+
+internal sealed record IfStatement(Expression Condition, Statement ThenBranch, Statement? ElseBranch) : Statement
+{
+    public override object? Execute(Interpreter ip)
+    {
+        if (Interpreter.IsTruthy(ip.Evaluate(Condition)))
+        {
+            ip.Execute(ThenBranch);
+        }
+        else if (ElseBranch != null)
+        {
+            ip.Execute(ElseBranch);
+        }
+
+        return null;
+    }
+}
+
 internal sealed record PrintStatement(Expression Expression) : Statement
 {
     public override object? Execute(Interpreter ip)

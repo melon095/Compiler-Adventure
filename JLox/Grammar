@@ -4,10 +4,14 @@ declaration    → letDecl
 			   | statement ;
 
 statement      → exprStmt
+               | ifStmt
                | printStmt 
                | block ;
 
 letDecl	       → "let" "mut"? IDENTIFIER ( "=" expression )? ";" ;
+
+ifStmt         → "if" expression statement ( "else" statement )?
+               | "if" expression "do:" statement ( "else:" statement )?
 
 exprStmt 	   → expression ";" ;
 printStmt      → "print" expression ";" ;
