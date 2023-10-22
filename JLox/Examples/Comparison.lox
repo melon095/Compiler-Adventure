@@ -1,4 +1,4 @@
-5 < 2; // false
+print(5 < 2 == false); // false
 5 <= 2; // false
 5 > 2; // true
 5 >= 2; // true

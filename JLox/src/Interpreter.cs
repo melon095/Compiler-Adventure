@@ -8,13 +8,13 @@ internal class Interpreter : IExpressionVisitor<object?>, IStatementVisitor<obje
 {
     private LoxEnvironment Environment = new();
 
-    public void Interpret(IEnumerable<Statement> statements)
+    public void Interpret(IEnumerable<Statement> statements, bool repl = false)
     {
         try
         {
             foreach (var stmt in statements)
             {
-                Execute(stmt);
+                Execute(stmt, repl);
             }
         }
         catch (RuntimeException ex)
@@ -63,9 +63,15 @@ internal class Interpreter : IExpressionVisitor<object?>, IStatementVisitor<obje
         return expr.Accept(this);
     }
 
-    private void Execute(Statement stmt)
+    private void Execute(Statement stmt, bool repl = false)
     {
-        stmt.Accept(this);
+        var result = stmt.Accept(this);
+
+        // So ugly
+        if (repl && result != null)
+        {
+            Console.WriteLine(Stringify.ToString(result));
+        }
     }
 
     private void ExecuteBlock(IEnumerable<Statement> statements, LoxEnvironment environment)
@@ -252,9 +258,7 @@ internal class Interpreter : IExpressionVisitor<object?>, IStatementVisitor<obje
 
     public object? VisitExpressionStatement(ExpressionStatement stmt)
     {
-        Evaluate(stmt.Expression);
-
-        return null;
+        return Evaluate(stmt.Expression);
     }
 
     #endregion

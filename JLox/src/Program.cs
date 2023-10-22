@@ -12,6 +12,7 @@ internal class Program
 
     static bool HadError = false;
     static bool HadRuntimeError = false;
+    static bool IsRepl = false;
 
     static readonly Interpreter Interpreter = new();
 
@@ -34,6 +35,7 @@ internal class Program
         }
         else
         {
+            IsRepl = true;
             RunREPL();
         }
 
@@ -91,7 +93,7 @@ internal class Program
         Parser parser = new(tokens);
         var statements = parser.Parse();
 
-        Interpreter.Interpret(statements);
+        Interpreter.Interpret(statements, IsRepl);
     }
 
     public static void RuntimeError(RuntimeException ex)
