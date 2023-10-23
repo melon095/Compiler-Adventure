@@ -6,7 +6,17 @@ namespace JLox.src;
 
 internal class Interpreter
 {
-    public LoxEnvironment Environment = new();
+    public readonly LoxEnvironment GlobalEnvironment = new();
+    public LoxEnvironment Environment;
+
+    public Interpreter()
+    {
+        Environment = GlobalEnvironment;
+
+        GlobalEnvironment.Define("MAX_NUMBER", new Key(true, double.MaxValue));
+        GlobalEnvironment.DefineFunction("clock", new NativeFunctions.Clock());
+        DefineDebugFunction("StackLog", new NativeFunctions.DebugPrintScope());
+    }
 
     public void Interpret(IEnumerable<Statement> statements, bool repl = false)
     {
@@ -94,5 +104,10 @@ internal class Interpreter
         {
             Environment = previous;
         }
+    }
+
+    private void DefineDebugFunction(string name, ICallable func)
+    {
+        GlobalEnvironment.DefineFunction($"${name}", func);
     }
 }

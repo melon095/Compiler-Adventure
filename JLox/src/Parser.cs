@@ -1,11 +1,13 @@
-﻿using JLox.src.Expr;
+﻿using JLox.src.Exceptions;
+using JLox.src.Expr;
 using JLox.src.Stmt;
-using Microsoft.VisualBasic;
 
 namespace JLox.src;
 
 internal class Parser
 {
+    private readonly static int MaxFunctionParameters = 255;
+
     private readonly List<Token> Tokens;
     private int Current = 0;
 
@@ -14,7 +16,10 @@ internal class Parser
         Tokens = t;
     }
 
-    private ParseException Error(Token token, string message)
+    /// <summary>
+    /// Creates a <see cref="ParseException">ParseException</see> and logs the error to STDOUT but does not throw.
+    /// </summary>
+    private static ParseException Error(Token token, string message)
     {
         Program.Error(token, message);
 
@@ -125,6 +130,7 @@ internal class Parser
 
     private Statement Declaration()
     {
+        if (Match(TokenType.Function)) return Function("function");
         if (Match(TokenType.Let)) return LetDeclaration();
 
         return Statement();
@@ -135,6 +141,7 @@ internal class Parser
         if (Match(TokenType.For)) return ForStatement();
         if (Match(TokenType.If)) return IfStatement();
         if (Match(TokenType.Print)) return PrintStatement();
+        if (Match(TokenType.Return)) return ReturnStatement();
         if (Match(TokenType.While)) return WhileStatement();
         if (Match(TokenType.LeftBrace)) return new BlockStatement(BlockStatement());
 
@@ -288,7 +295,42 @@ internal class Parser
             return new UnaryExpression(op, right);
         }
 
-        return Primary();
+        return Call();
+    }
+
+    private Expression Call()
+    {
+        var expr = Primary();
+
+        while (true)
+        {
+            if (Match(TokenType.LeftParen))
+                expr = FinishCall(expr);
+            else
+                break;
+        }
+
+        return expr;
+
+        Expression FinishCall(Expression callee)
+        {
+            var arguments = new List<Expression>();
+
+            if (!Check(TokenType.RightParen))
+            {
+                do
+                {
+                    if (arguments.Count >= MaxFunctionParameters)
+                        Error(Peek(), $"Unable to have {MaxFunctionParameters} or more parameters in a function");
+
+                    arguments.Add(Expression());
+                } while (Match(TokenType.Comma));
+            }
+
+            var paren = Consume(TokenType.RightParen, "Expected ')' after arguments.");
+
+            return new CallExpression(callee, paren, arguments);
+        }
     }
 
     private Expression Primary()
@@ -377,6 +419,33 @@ internal class Parser
         return new PrintStatement(expr);
     }
 
+    private FunctionStatement Function(string kind)
+    {
+        var name = Consume(TokenType.Identifier, $"Expected {kind} name.");
+
+        Consume(TokenType.LeftParen, $"Expected '(' after {kind} name");
+        var parameters = new List<Token>();
+
+        if (!Check(TokenType.RightParen))
+        {
+            do
+            {
+                if (parameters.Count >= MaxFunctionParameters)
+                    Error(Peek(), $"Can't have more than {MaxFunctionParameters} parameters");
+
+                parameters.Add(Consume(TokenType.Identifier, "Expected parameter name"));
+
+            } while (Match(TokenType.Comma));
+        }
+
+        Consume(TokenType.RightParen, "Expected ')' after parameters.");
+
+        Consume(TokenType.LeftBrace, $"Expected '{{' before {kind} body.");
+        var body = BlockStatement();
+
+        return new FunctionStatement(name, parameters, body);
+    }
+
     private Statement LetDeclaration()
     {
         var isMutable = Match(TokenType.Mutable);
@@ -404,6 +473,19 @@ internal class Parser
         Consume(TokenType.RightBrace, "Expected '}' after block.");
 
         return statements;
+    }
+
+    private Statement ReturnStatement()
+    {
+        var keyword = Previous;
+        Expression? value = null;
+
+        if (!Check(TokenType.Semicolon))
+            value = Expression();
+
+        Consume(TokenType.Semicolon, "Expected ';' after return value.");
+
+        return new ReturnStatement(keyword, value);
     }
 
     private Statement WhileStatement()

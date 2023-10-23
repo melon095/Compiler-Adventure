@@ -13,15 +13,14 @@ internal static class Stringify
     }
 
     public static string ToString(object? obj)
-    {
-        return obj switch
+        => obj switch
         {
             string s => s,
             null => "nil",
             double d => Double(d),
             bool and true => "true",
             bool and false => "false",
-            _ => obj.ToString() ?? "<null>"
+            _ => obj.ToString() ?? "nil"
         };
-    }
+
 }

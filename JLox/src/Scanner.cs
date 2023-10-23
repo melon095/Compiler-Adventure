@@ -284,7 +284,8 @@ internal class Scanner
     private static bool IsAlpha(char c)
         => (c >= 'a' && c <= 'z') ||
            (c >= 'A' && c <= 'Z') ||
-           c == '_';
+            c == '$' || // Similar to JS, but i like the $ in JS tbh
+            c == '_';
 
     private static bool IsAlphaNumeric(char c)
         => IsAlpha(c) || IsDigit(c);

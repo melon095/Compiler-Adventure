@@ -8,4 +8,46 @@ fn MakeBreakfast(a, b, c)
 	return 0;
 }
 
-print MakeBreakfast("eggs", "bacon", "toast");
+print(MakeBreakfast("eggs", "bacon", "toast"));
+
+fn xP() {
+	return "xP";
+}
+
+print(xP());
+
+fn identity(a) {
+	return a;
+}
+
+print(identity(0) == 0);
+print(identity(1) == 1);
+print(identity(nil) == nil);
+
+fn ParentScope()
+{
+	let a = 1;
+
+	fn ChildScope()
+	{
+		let b = 2;
+
+		fn GrandChildScope()
+		{
+			let c = 3;
+
+			print a;
+			print b;
+			print c;
+			$StackLog(MAX_NUMBER);
+		}
+
+		GrandChildScope();
+	}
+
+	ChildScope();
+}
+
+let fnBind = ParentScope;
+
+fnBind();

@@ -1,9 +1,11 @@
-let mut a = 0;
-let mut temp;
-
-for (let mut b = 1; a < 1000; b = temp + b)
+fn fib(n)
 {
-	print(a);
-	temp = a;
-	a = b;
+	if n <= 1 return n;
+
+	return fib(n - 2) + fib(n - 1);
+}
+
+for (let mut i = 0; i < 20; i++)
+{
+	print(fib(i));
 }

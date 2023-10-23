@@ -18,6 +18,8 @@ internal class Key
         Mutable = false;
         Value = value;
     }
+
+    public override string ToString() => Stringify.ToString(Value);
 }
 
 // System.Environment xP
@@ -28,7 +30,7 @@ internal class LoxEnvironment
     /// 
     /// When the scope is global, this is null.
     /// </summary>
-    private readonly LoxEnvironment? Enclosing;
+    public readonly LoxEnvironment? Enclosing;
 
     private readonly Dictionary<string, Key> LocalScope = new();
 
@@ -48,7 +50,13 @@ internal class LoxEnvironment
         Enclosing = parentScope;
     }
 
+    public IReadOnlyDictionary<string, Key> GetValues() => LocalScope;
+
     public void Define(string name, Key key) => LocalScope[name] = key;
+
+    public void DefineFunction(string name, ICallable function)
+        => Define(name, new Key(true, function));
+
 
     public object? Get(Token name)
     {

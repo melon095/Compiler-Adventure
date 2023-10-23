@@ -1,4 +1,5 @@
-﻿using JLox.src.Expr;
+﻿using JLox.src.Exceptions;
+using JLox.src.Expr;
 using System.Data;
 
 namespace JLox.src.Stmt;
@@ -30,6 +31,18 @@ internal sealed record ExpressionStatement(Expression Expression) : Statement
     public override object? Execute(Interpreter ip) => ip.Evaluate(Expression);
 }
 
+internal sealed record FunctionStatement(Token Name, List<Token> Params, List<Statement> Body) : Statement
+{
+    public override object? Execute(Interpreter ip)
+    {
+        var func = new LoxFunction(this, ip.Environment);
+
+        ip.Environment.Define(Name.Lexeme, new(true, func));
+
+        return null;
+    }
+}
+
 internal sealed record IfStatement(Expression Condition, Statement ThenBranch, Statement? ElseBranch) : Statement
 {
     public override object? Execute(Interpreter ip)
@@ -56,6 +69,18 @@ internal sealed record PrintStatement(Expression Expression) : Statement
         Console.WriteLine(Stringify.ToString(value));
 
         return null;
+    }
+}
+
+internal sealed record ReturnStatement(Token Keyword, Expression? Value) : Statement
+{
+    public override object? Execute(Interpreter ip)
+    {
+        object? value = Value is not null
+            ? ip.Evaluate(Value)
+            : null;
+
+        throw new ReturnException(value);
     }
 }
 

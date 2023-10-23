@@ -1,14 +1,19 @@
 ﻿program        → declaration* EOF ;
 
-declaration    → letDecl
+declaration    → fnDecl
+               | letDecl
 			   | statement ;
 
 statement      → exprStmt
                | forStmt
                | ifStmt
-               | printStmt 
+               | printStmt
+               | returnStmt
                | whileStmt
                | block ;
+
+fnDecl         → "fn" function ;
+function       → IDENTIFIER "(" parameters? ")" block ;
 
 letDecl	       → "let" "mut"? IDENTIFIER ( "=" expression )? ";" ;
 
@@ -18,12 +23,13 @@ ifStmt         → "if" expression statement ( "else" statement )?
 exprStmt 	   → expression ";" ;
 printStmt      → "print" expression ";" ;
 whileStmt      → "while" expression statement ;
+returnStmt	   → "return" expression? ";" ;
 
-forStmt       → "for" "(" ( letDecl | exprStmt | ";" )
+forStmt        → "for" "(" ( letDecl | exprStmt | ";" )
 			    expression? ";"
 			    expression? ")" statement ;  
 
-block		  → "{" declaration* "}" ;
+block		   → "{" declaration* "}" ;
 
 expression     → assignment ;
 assignment     → IDENTIFIER "=" assignment
@@ -37,7 +43,9 @@ comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
 term           → factor ( ( "-" | "+" | "++" | "--" ) factor )* ;
 factor         → unary ( ( "/" | "*" ) unary )* ;
 unary          → ( "!" | "-" ) unary
-               | primary ;
+               | call ;
+call           → primary ( "(" arguments? ")" )* ;
+arguments      → expression ( "," expression )* ;
 
 primary        -> "true" | "false" | "nil" 
                | "NUMBER" | "STRING" 

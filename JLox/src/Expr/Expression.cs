@@ -1,6 +1,4 @@
 ﻿using JLox.src.Exceptions;
-using System.Collections;
-using System.Diagnostics.CodeAnalysis;
 
 namespace JLox.src.Expr;
 
@@ -28,76 +26,33 @@ internal sealed record BinaryExpression(Expression Left, Token Op, Expression Ri
         var left = ip.Evaluate(Left);
         var right = ip.Evaluate(Right);
 
-        // TODO: This should raise an exception
-        if (left == null || right == null)
-        {
-            return null;
-        }
-
         switch (Op.Type)
         {
-            case TokenType.Minus:
+
+            case TokenType.BangEqual:
                 {
-                    Interpreter.EnsureNumberOperands(Op, left, right);
-
-                    return (double)left - (double)right;
-                }
-
-            case TokenType.Slash:
-                {
-                    Interpreter.EnsureNumberOperands(Op, left, right);
-
-                    var l = (double)left;
-                    var r = (double)right;
-
-                    if (l == 0.0 || r == 0.0)
+                    if (left is null && right is null)
                     {
-                        throw new RuntimeException(Op, "Division by zero");
+                        return false;
                     }
 
-                    return (double)left / (double)right;
+                    return !left?.Equals(right) ?? false;
                 }
 
-            case TokenType.Star:
+            case TokenType.EqualEqual:
                 {
-                    Interpreter.EnsureNumberOperands(Op, left, right);
+                    // A bit ugly, but you nil is a valid value in Lox, so we need to check for nulls
+                    if (left is null && right is null)
+                    {
+                        return true;
+                    }
 
-                    return (double)left * (double)right;
+                    return left?.Equals(right) ?? false;
                 }
-
-            case TokenType.Greater:
-                {
-                    Interpreter.EnsureNumberOperands(Op, left, right);
-
-                    return (double)left > (double)right;
-                }
-
-            case TokenType.GreaterEqual:
-                {
-                    Interpreter.EnsureNumberOperands(Op, left, right);
-
-                    return (double)left >= (double)right;
-                }
-
-            case TokenType.Less:
-                {
-                    Interpreter.EnsureNumberOperands(Op, left, right);
-
-                    return (double)left < (double)right;
-                }
-
-            case TokenType.LessEqual:
-                {
-                    Interpreter.EnsureNumberOperands(Op, left, right);
-
-                    return (double)left <= (double)right;
-                }
-
-            case TokenType.BangEqual: return !left?.Equals(right) ?? false;
-            case TokenType.EqualEqual: return left?.Equals(right) ?? false;
 
             case TokenType.Plus:
                 {
+                    Interpreter.EnsureNumberOperands(Op, left, right);
 
                     if (left is double l && right is double r)
                     {
@@ -111,6 +66,64 @@ internal sealed record BinaryExpression(Expression Left, Token Op, Expression Ri
 
                     throw new RuntimeException(Op, "Unable to concatenate operands");
                 }
+
+            case TokenType.Minus:
+                {
+                    Interpreter.EnsureNumberOperands(Op, left, right);
+
+                    return (double)left! - (double)right!;
+                }
+
+            case TokenType.Slash:
+                {
+                    Interpreter.EnsureNumberOperands(Op, left, right);
+
+                    var l = (double)left!;
+                    var r = (double)right!;
+
+                    if (l == 0.0 || r == 0.0)
+                    {
+                        throw new RuntimeException(Op, "Division by zero");
+                    }
+
+                    return (double)left / (double)right;
+                }
+
+            case TokenType.Star:
+                {
+                    Interpreter.EnsureNumberOperands(Op, left, right);
+
+                    return (double)left! * (double)right!;
+                }
+
+            case TokenType.Greater:
+                {
+                    Interpreter.EnsureNumberOperands(Op, left, right);
+
+                    return (double)left! > (double)right!;
+                }
+
+            case TokenType.GreaterEqual:
+                {
+                    Interpreter.EnsureNumberOperands(Op, left, right);
+
+                    return (double)left! >= (double)right!;
+                }
+
+            case TokenType.Less:
+                {
+                    Interpreter.EnsureNumberOperands(Op, left, right);
+
+                    return (double)left! < (double)right!;
+                }
+
+            case TokenType.LessEqual:
+                {
+                    Interpreter.EnsureNumberOperands(Op, left, right);
+
+                    return (double)left! <= (double)right!;
+                }
+
             default: return null;
         }
     }
@@ -120,7 +133,17 @@ internal sealed record CallExpression(Expression Callee, Token Paren, List<Expre
 {
     public override object? Execute(Interpreter ip)
     {
-        throw new NotImplementedException();
+        var callee = ip.Evaluate(Callee);
+
+        var arguments = Arguments.Select(ip.Evaluate).ToList();
+
+        var function = callee as ICallable
+            ?? throw new RuntimeException(Paren, "Can only call functions and classes");
+
+        if (arguments.Count != function.Arity)
+            throw new RuntimeException(Paren, $"Expected {function.Arity} arguments but got {arguments.Count}");
+
+        return function.Call(ip, arguments);
     }
 }
 
