@@ -1,4 +1,5 @@
 ﻿using JLox.src.Expr;
+using System.Data;
 
 namespace JLox.src.Stmt;
 
@@ -88,5 +89,18 @@ internal sealed record VariableStatement(Token Name) : Statement
     public override object? Execute(Interpreter ip)
     {
         throw new NotImplementedException();
+    }
+}
+
+internal sealed record WhileStatement(Expression Condition, Statement Body) : Statement
+{
+    public override object? Execute(Interpreter ip)
+    {
+        while (Interpreter.IsTruthy(ip.Evaluate(Condition)))
+        {
+            ip.Execute(Body);
+        }
+
+        return null;
     }
 }

@@ -1,4 +1,6 @@
 ﻿using JLox.src.Exceptions;
+using System.Collections;
+using System.Diagnostics.CodeAnalysis;
 
 namespace JLox.src.Expr;
 
@@ -148,7 +150,14 @@ internal sealed record LogicalExpression(Expression Left, Token Op, Expression R
 {
     public override object? Execute(Interpreter ip)
     {
-        throw new NotImplementedException();
+        var left = ip.Evaluate(Left);
+
+        return Op.Type switch
+        {
+            TokenType.Or => Interpreter.IsTruthy(left) ? left : ip.Evaluate(Right),
+            TokenType.And => !Interpreter.IsTruthy(left) ? left : ip.Evaluate(Right),
+            _ => null
+        };
     }
 }
 

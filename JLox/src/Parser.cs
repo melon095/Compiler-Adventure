@@ -1,5 +1,6 @@
 ﻿using JLox.src.Expr;
 using JLox.src.Stmt;
+using Microsoft.VisualBasic;
 
 namespace JLox.src;
 
@@ -131,8 +132,10 @@ internal class Parser
 
     private Statement Statement()
     {
+        if (Match(TokenType.For)) return ForStatement();
         if (Match(TokenType.If)) return IfStatement();
         if (Match(TokenType.Print)) return PrintStatement();
+        if (Match(TokenType.While)) return WhileStatement();
         if (Match(TokenType.LeftBrace)) return new BlockStatement(BlockStatement());
 
         return ExpressionStatement();
@@ -142,7 +145,7 @@ internal class Parser
 
     private Expression Assignment()
     {
-        var expr = Equality();
+        var expr = Or();
 
         if (Match(TokenType.Equal))
         {
@@ -155,6 +158,36 @@ internal class Parser
             }
 
             Error(equals, "Invalid assignment target.");
+        }
+
+        return expr;
+    }
+
+    private Expression Or()
+    {
+        var expr = And();
+
+        while (Match(TokenType.Or))
+        {
+            var op = Previous;
+            var right = And();
+
+            expr = new LogicalExpression(expr, op, right);
+        }
+
+        return expr;
+    }
+
+    private Expression And()
+    {
+        var expr = Equality();
+
+        while (Match(TokenType.And))
+        {
+            var op = Previous;
+            var right = Equality();
+
+            expr = new LogicalExpression(expr, op, right);
         }
 
         return expr;
@@ -199,9 +232,31 @@ internal class Parser
         {
             var op = Previous;
 
-            var right = Factor();
+            /*
+                let mut a = 1;
+                a++;
 
-            expr = new BinaryExpression(expr, op, right);
+                Converts to:
+                a = a + 1;
+            */
+            if (Match(op.Type))
+            {
+                // TODO: This might break on object setting
+                if (expr is not VariableExpression)
+                {
+                    throw Error(op, "Unable to ");
+                }
+
+                // right is the literal 1
+                var right = new LiteralExpression(1.0);
+
+                return new AssignmentExpression(((VariableExpression)expr).Name, new BinaryExpression(expr, op, right));
+            }
+            else
+            {
+                var right = Factor();
+                expr = new BinaryExpression(expr, op, right);
+            }
         }
 
         return expr;
@@ -349,5 +404,69 @@ internal class Parser
         Consume(TokenType.RightBrace, "Expected '}' after block.");
 
         return statements;
+    }
+
+    private Statement WhileStatement()
+    {
+        var condition = Expression();
+        var body = Statement();
+
+        return new WhileStatement(condition, body);
+    }
+
+    private Statement ForStatement()
+    {
+        Consume(TokenType.LeftParen, "Expected '(' after 'for'.");
+
+        Statement? initializer;
+        if (Match(TokenType.Semicolon))
+        {
+            initializer = null;
+        }
+        else if (Match(TokenType.Let))
+        {
+            initializer = LetDeclaration();
+        }
+        else
+        {
+            initializer = ExpressionStatement();
+        }
+
+        Expression? condition = null;
+        if (!Check(TokenType.Semicolon))
+        {
+            condition = Expression();
+        }
+
+        Consume(TokenType.Semicolon, "Expected ';' after loop condition.");
+
+        Expression? increment = null;
+        if (!Check(TokenType.RightParen))
+        {
+            increment = Expression();
+        }
+
+        Consume(TokenType.RightParen, "Expected ')' after for clauses.");
+
+        var body = Statement();
+
+        if (increment is not null)
+        {
+            body = new BlockStatement(new List<Statement> { body, new ExpressionStatement(increment) });
+        }
+
+        condition ??= new LiteralExpression(true);
+
+        body = new WhileStatement(condition, body);
+
+        if (initializer is not null)
+        {
+            body = new BlockStatement(new List<Statement> { initializer, body });
+        }
+
+        // Allow ; at the end of the for loop
+        if (Check(TokenType.Semicolon)) Advance();
+
+        return body;
     }
 }

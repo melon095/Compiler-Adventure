@@ -1,0 +1,9 @@
+let mut a = 0;
+let mut temp;
+
+for (let mut b = 1; a < 1000; b = temp + b)
+{
+	print(a);
+	temp = a;
+	a = b;
+}
