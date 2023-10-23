@@ -1,6 +1,6 @@
 // This is a single-line comment
-print "Hello, World!";
-print 123.45;
+print("Hello, World!");
+print(123.45);
 
 /*
 

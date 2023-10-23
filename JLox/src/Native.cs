@@ -54,4 +54,18 @@ internal sealed class NativeFunctions
             return null;
         }
     }
+
+    internal sealed class Print : NativeFunction, ICallable
+    {
+        public int Arity => 1;
+
+        public object? Call(Interpreter ip, List<object?> args)
+        {
+            _ = ip;
+
+            Console.WriteLine(Stringify.ToString(args[0]));
+
+            return null;
+        }
+    }
 }

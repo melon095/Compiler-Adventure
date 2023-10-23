@@ -60,18 +60,6 @@ internal sealed record IfStatement(Expression Condition, Statement ThenBranch, S
     }
 }
 
-internal sealed record PrintStatement(Expression Expression) : Statement
-{
-    public override object? Execute(Interpreter ip)
-    {
-        var value = ip.Evaluate(Expression);
-
-        Console.WriteLine(Stringify.ToString(value));
-
-        return null;
-    }
-}
-
 internal sealed record ReturnStatement(Token Keyword, Expression? Value) : Statement
 {
     public override object? Execute(Interpreter ip)

@@ -1,22 +1,22 @@
 if (true)
 {
 	let x = true;
-	print x;
+	print(x);
 }
 else
 {
 	let x = false;
-	print x;
+	print(x);
 }
 
-let a = 1;
+let mut a = 1;
 while (a < 10)
 {
-	print a;
-	a = a + 1;
+	print(a);
+	a++;
 }
 
-for (let i = 0; i < 10; i = i + 1)
+for (let mut i = 0; i < 10; i = i + 1)
 {
-	print i;
+	print(i);
 }

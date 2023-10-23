@@ -3,8 +3,8 @@
 let nullable; // nil
 
 let mut breakfast = "bagels";
-print breakfast;
-print letiable;
+print(breakfast);
+print(letiable);
 
 breakfast = "oatmeal";
 print(breakfast);

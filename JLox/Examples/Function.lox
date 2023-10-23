@@ -1,9 +1,9 @@
 fn MakeBreakfast(a, b, c)
 {
-	print "Making breakfast!";
-	print a;
-	print b;
-	print c;
+	print("Making breakfast!");
+	print(a);
+	print(b);
+	print(c);
 
 	return 0;
 }
@@ -36,9 +36,9 @@ fn ParentScope()
 		{
 			let c = 3;
 
-			print a;
-			print b;
-			print c;
+			print(a);
+			print(b);
+			print(c);
 			$StackLog(MAX_NUMBER);
 		}
 

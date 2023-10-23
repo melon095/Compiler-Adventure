@@ -15,6 +15,8 @@ internal class Interpreter
 
         GlobalEnvironment.Define("MAX_NUMBER", new Key(true, double.MaxValue));
         GlobalEnvironment.DefineFunction("clock", new NativeFunctions.Clock());
+        GlobalEnvironment.DefineFunction("print", new NativeFunctions.Print());
+
         DefineDebugFunction("StackLog", new NativeFunctions.DebugPrintScope());
     }
 

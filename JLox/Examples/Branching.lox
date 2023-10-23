@@ -1,4 +1,4 @@
-if true do: print("One-liner if else") else: print(":D");
+if true do: print("One-liner if else"); else: print(":D");
 if true do: print("Else is not required.");
 
 let myCondition = 42 == 42;

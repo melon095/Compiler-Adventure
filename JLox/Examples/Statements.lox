@@ -1,7 +1,7 @@
-print "Hello, World!";
+print("Hello, World!");
 
 "some expression";
 
 {
-	print "Scoped";
+	print("Scoped");
 }

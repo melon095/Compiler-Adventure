@@ -1,11 +1,11 @@
-print !true; // false
-print !false; // true
+print(!true); // false
+print(!false); // true
 
-print true and false; // false
-print true and true; // true
+print(true and false); // false
+print(true and true); // true
 
-print false or false; // false
-print true or false; // true
+print(false or false); // false
+print(true or false); // true
 
-print nil or "yes" or "no"; // "yes"
-print nil and "yes" and "no"; // nil
+print(nil or "yes" or "no"); // "yes"
+print(nil and "yes" and "no"); // nil

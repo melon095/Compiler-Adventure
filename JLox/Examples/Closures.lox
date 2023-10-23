@@ -8,13 +8,14 @@ fn Identity(a)
 	return a;
 }
 
-print Identity(AddPair(1, 2));
+let identity = Identity(AddPair(1, 2));
+print(identity);
 
 fn outerFunctin()
 {
 	fn innerFunction()
 	{
-		print "Hello from inner function";
+		print("Hello from inner function");
 	}
 	
 	innerFunction();
@@ -24,9 +25,9 @@ fn returnFunction()
 {
 	let outside = "outside";
 
-	fun inner() 
+	fn inner() 
 	{
-		print outside;
+		print(outside);
 	}
 
 	return inner;

@@ -50,7 +50,6 @@ internal enum TokenType
     If,
     Nil,
     Or,
-    Print,
     Return,
     Super,
     Self,

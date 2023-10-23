@@ -119,7 +119,6 @@ internal class Parser
                 case TokenType.For:
                 case TokenType.If:
                 case TokenType.While:
-                case TokenType.Print:
                 case TokenType.Return:
                     return;
             }
@@ -140,7 +139,6 @@ internal class Parser
     {
         if (Match(TokenType.For)) return ForStatement();
         if (Match(TokenType.If)) return IfStatement();
-        if (Match(TokenType.Print)) return PrintStatement();
         if (Match(TokenType.Return)) return ReturnStatement();
         if (Match(TokenType.While)) return WhileStatement();
         if (Match(TokenType.LeftBrace)) return new BlockStatement(BlockStatement());
@@ -406,17 +404,6 @@ internal class Parser
 
             return new IfStatement(condition, thenBranch, elseBranch);
         }
-    }
-
-    private Statement PrintStatement()
-    {
-        var expr = Expression();
-
-        // Ugly hack to not force semicolon after a print inside of a one-liner if statement
-        if (Tokens[Current + 1].Type != TokenType.Colon)
-            Consume(TokenType.Semicolon, "Expected ';' after value.");
-
-        return new PrintStatement(expr);
     }
 
     private FunctionStatement Function(string kind)

@@ -7,7 +7,6 @@ declaration    → fnDecl
 statement      → exprStmt
                | forStmt
                | ifStmt
-               | printStmt
                | returnStmt
                | whileStmt
                | block ;
@@ -21,7 +20,6 @@ ifStmt         → "if" expression statement ( "else" statement )?
                | "if" expression "do:" statement ( "else:" statement )?
 
 exprStmt 	   → expression ";" ;
-printStmt      → "print" expression ";" ;
 whileStmt      → "while" expression statement ;
 returnStmt	   → "return" expression? ";" ;
 

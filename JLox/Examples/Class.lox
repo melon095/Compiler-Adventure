@@ -8,17 +8,17 @@ class Breakfast
 
 	Cook(self)
 	{
-		print "Eggs a-fryin'!";
+		print("Eggs a-fryin'!");
 	}
 
 	Serve(self, who)
 	{
-		print "Enjoy your " + self.meat + " and " + self.bread + ", " + who + "!";
+		print("Enjoy your " + self.meat + " and " + self.bread + ", " + who + "!");
 	}
 
 	StaticMethod()
 	{
-		print "Static method called!";
+		print("Static method called!");
 	}
 }
 
@@ -40,7 +40,7 @@ class Brunch : Breakfast
 
 	Drink(self)
 	{
-		print "How about a " + self.drink + "?";
+		print("How about a " + self.drink + "?");
 	}
 }
 
