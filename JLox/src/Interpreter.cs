@@ -226,8 +226,6 @@ internal class Interpreter : IExpressionVisitor, IStatementVisitor
 
             case TokenType.Plus:
                 {
-                    EnsureNumberOperands(expr.Op, left, right);
-
                     if (left is double l && right is double r)
                     {
                         return l + r;
