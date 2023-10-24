@@ -42,6 +42,7 @@ fn ParentScope()
 			$StackLog(MAX_NUMBER);
 		}
 
+		print(b);
 		GrandChildScope();
 	}
 
@@ -52,6 +53,8 @@ let fnBind = ParentScope;
 
 fnBind();
 
+// Not allowed as a already is defined
+/*
 fn Scope(a)
 {
 	let a = "xp";
@@ -60,3 +63,18 @@ fn Scope(a)
 let a = "1";
 Scope(a);
 print(a);
+*/
+
+// Same here. Not allowed as a already is defined
+/*
+fn Bad()
+{
+	let a = "first";
+	let a = "second";
+}
+
+Bad();
+*/
+
+// You can't return from top level scope
+// return "xd";

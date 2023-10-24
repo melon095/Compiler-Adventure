@@ -50,6 +50,19 @@ internal class LoxEnvironment
         Enclosing = parentScope;
     }
 
+    private LoxEnvironment Ancestor(int distance)
+    {
+        var env = this;
+
+        for (int i = 0; i < distance; i++)
+        {
+            env = env!.Enclosing;
+        }
+
+        // TODO: Fix nullable
+        return env!;
+    }
+
     public IReadOnlyDictionary<string, Key> GetValues() => LocalScope;
 
     public void Define(string name, Key key) => LocalScope[name] = key;
@@ -57,6 +70,9 @@ internal class LoxEnvironment
     public void DefineFunction(string name, ICallable function)
         => Define(name, new Key(true, function));
 
+    // TODO: This has null reference exception.
+    public object? GetAt(int distance, string name)
+        => Ancestor(distance).LocalScope[name].Value;
 
     public object? Get(Token name)
     {
@@ -70,6 +86,9 @@ internal class LoxEnvironment
 
         throw new RuntimeException(name, $"Undefined variable '{name.Lexeme}'");
     }
+
+    public void AssignAt(int distance, Token name, object? value)
+        => Ancestor(distance).LocalScope[name.Lexeme].Value = value;
 
     public void Assign(Token name, object? value)
     {

@@ -1,7 +1,7 @@
 ﻿using JLox.src.Exceptions;
 using JLox.src.Expr;
 using JLox.src.Stmt;
-using System.Xml.Linq;
+using System.Data;
 
 namespace JLox.src;
 
@@ -9,6 +9,7 @@ internal class Interpreter : IExpressionVisitor, IStatementVisitor
 {
     public readonly LoxEnvironment GlobalEnvironment = new();
     public LoxEnvironment Environment;
+    public readonly Dictionary<Expression, int> Locals = new();
 
     public Interpreter()
     {
@@ -74,6 +75,16 @@ internal class Interpreter : IExpressionVisitor, IStatementVisitor
         return true;
     }
 
+    public object? LookUpVariable(Token name, Expression expr)
+    {
+        if (Locals.TryGetValue(expr, out var distance))
+        {
+            return Environment.GetAt(distance, name.Lexeme);
+        }
+
+        return GlobalEnvironment.Get(name);
+    }
+
     public object? Evaluate(Expression expr)
     {
         return expr.Visit(this);
@@ -89,6 +100,8 @@ internal class Interpreter : IExpressionVisitor, IStatementVisitor
             Console.WriteLine(Stringify.ToString(result));
         }
     }
+
+    public void Resolve(Expression expr, int depth = 0) => Locals[expr] = depth;
 
     public void ExecuteBlock(IEnumerable<Statement> statements, LoxEnvironment environment)
     {
@@ -189,7 +202,10 @@ internal class Interpreter : IExpressionVisitor, IStatementVisitor
     {
         var value = Evaluate(expr.Value);
 
-        Environment.Assign(expr.Name, value);
+        if (Locals.TryGetValue(expr, out var distance))
+            Environment.AssignAt(distance, expr.Name, value);
+        else
+            GlobalEnvironment.Assign(expr.Name, value);
 
         return value;
     }
@@ -343,7 +359,7 @@ internal class Interpreter : IExpressionVisitor, IStatementVisitor
     }
 
     public object? VisitVariableExpression(VariableExpression expr)
-        => Environment.Get(expr.Name);
+        => LookUpVariable(expr.Name, expr);
 
     #endregion
 }

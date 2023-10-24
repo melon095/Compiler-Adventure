@@ -93,6 +93,19 @@ internal class Program
         Parser parser = new(tokens);
         var statements = parser.Parse();
 
+        if (HadError)
+        {
+            return;
+        }
+
+        var resolver = new Resolver(Interpreter);
+        resolver.Resolve(statements);
+
+        if (HadError)
+        {
+            return;
+        }
+
         Interpreter.Interpret(statements, IsRepl);
     }
 
@@ -123,6 +136,8 @@ internal class Program
     static void Report(int line, string where, string message)
     {
         Console.Error.WriteLine($"[line {line}] Error{where}: {message}");
-        HadError = true;
+
+        // Only set the error flag if we're not in the REPL
+        HadError = !IsRepl;
     }
 }
