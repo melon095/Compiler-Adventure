@@ -1,119 +1,50 @@
-﻿using JLox.src.Exceptions;
-using JLox.src.Expr;
-using System.Data;
+﻿using JLox.src.Expr;
 
 namespace JLox.src.Stmt;
 
 internal abstract record Statement
 {
-    public abstract object? Execute(Interpreter ip);
+    public abstract object? Visit(IStatementVisitor visitor);
 };
-
-internal sealed record AssignmentStatement(Token Name, Expression Value) : Statement
-{
-    public override object? Execute(Interpreter ip)
-    {
-        throw new NotImplementedException();
-    }
-}
 
 internal sealed record BlockStatement(IEnumerable<Statement> Statements) : Statement
 {
-    public override object? Execute(Interpreter ip)
-    {
-        ip.ExecuteBlock(Statements, new(ip.Environment));
-        return null;
-    }
+    public override object? Visit(IStatementVisitor visitor)
+        => visitor.VisitBlockStatement(this);
 }
 
 internal sealed record ExpressionStatement(Expression Expression) : Statement
 {
-    public override object? Execute(Interpreter ip) => ip.Evaluate(Expression);
+    public override object? Visit(IStatementVisitor visitor)
+        => visitor.VisitExpressionStatement(this);
 }
 
 internal sealed record FunctionStatement(Token Name, List<Token> Params, List<Statement> Body) : Statement
 {
-    public override object? Execute(Interpreter ip)
-    {
-        var func = new LoxFunction(this, ip.Environment);
-
-        ip.Environment.Define(Name.Lexeme, new(true, func));
-
-        return null;
-    }
+    public override object? Visit(IStatementVisitor visitor)
+        => visitor.VisitFunctionStatement(this);
 }
 
 internal sealed record IfStatement(Expression Condition, Statement ThenBranch, Statement? ElseBranch) : Statement
 {
-    public override object? Execute(Interpreter ip)
-    {
-        if (Interpreter.IsTruthy(ip.Evaluate(Condition)))
-        {
-            ip.Execute(ThenBranch);
-        }
-        else if (ElseBranch != null)
-        {
-            ip.Execute(ElseBranch);
-        }
-
-        return null;
-    }
+    public override object? Visit(IStatementVisitor visitor)
+        => visitor.VisitIfStatement(this);
 }
 
 internal sealed record ReturnStatement(Token Keyword, Expression? Value) : Statement
 {
-    public override object? Execute(Interpreter ip)
-    {
-        object? value = Value is not null
-            ? ip.Evaluate(Value)
-            : null;
-
-        throw new ReturnException(value);
-    }
+    public override object? Visit(IStatementVisitor visitor)
+        => visitor.VisitReturnStatement(this);
 }
 
 internal sealed record LetStatement(Token Name, bool Mutable, Expression? Initializer) : Statement
 {
-    public override object? Execute(Interpreter ip)
-    {
-        object? value = null;
-
-        if (Initializer != null)
-        {
-            value = ip.Evaluate(Initializer);
-        }
-
-        ip.Environment.Define(Name.Lexeme, new(Mutable, value));
-
-        return null;
-    }
-}
-
-internal sealed record UnaryStatement(Token Operator, Expression Right) : Statement
-{
-    public override object? Execute(Interpreter ip)
-    {
-        throw new NotImplementedException();
-    }
-}
-
-internal sealed record VariableStatement(Token Name) : Statement
-{
-    public override object? Execute(Interpreter ip)
-    {
-        throw new NotImplementedException();
-    }
+    public override object? Visit(IStatementVisitor visitor)
+        => visitor.VisitLetStatement(this);
 }
 
 internal sealed record WhileStatement(Expression Condition, Statement Body) : Statement
 {
-    public override object? Execute(Interpreter ip)
-    {
-        while (Interpreter.IsTruthy(ip.Evaluate(Condition)))
-        {
-            ip.Execute(Body);
-        }
-
-        return null;
-    }
+    public override object? Visit(IStatementVisitor visitor)
+        => visitor.VisitWhileStatement(this);
 }

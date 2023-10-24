@@ -51,3 +51,12 @@ fn ParentScope()
 let fnBind = ParentScope;
 
 fnBind();
+
+fn Scope(a)
+{
+	let a = "xp";
+}
+
+let a = "1";
+Scope(a);
+print(a);
