@@ -20,7 +20,6 @@ internal sealed record BinaryExpression(Expression Left, Token Op, Expression Ri
         => visitor.VisitBinaryExpression(this);
 }
 
-
 internal sealed record CallExpression(Expression Callee, Token Paren, List<Expression> Arguments) : Expression
 {
     public override object? Visit(IExpressionVisitor visitor)
@@ -79,4 +78,9 @@ internal sealed record VariableExpression(Token Name) : Expression
 {
     public override object? Visit(IExpressionVisitor visitor)
         => visitor.VisitVariableExpression(this);
+
+    public override int GetHashCode()
+    {
+        return Name.GetHashCode();
+    }
 }

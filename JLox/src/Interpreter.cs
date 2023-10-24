@@ -101,7 +101,13 @@ internal class Interpreter : IExpressionVisitor, IStatementVisitor
         }
     }
 
-    public void Resolve(Expression expr, int depth = 0) => Locals[expr] = depth;
+    public void Resolve(Expression expr, int depth = 0)
+    {
+        Console.WriteLine($"Resolve {expr.GetHashCode()} {depth}");
+
+        Locals[expr] = depth;
+    }
+    //public void Resolve(Expression expr, int depth = 0) => Locals[expr] = depth;
 
     public void ExecuteBlock(IEnumerable<Statement> statements, LoxEnvironment environment)
     {
@@ -112,9 +118,8 @@ internal class Interpreter : IExpressionVisitor, IStatementVisitor
             Environment = environment;
 
             foreach (var stmt in statements)
-            {
                 Execute(stmt);
-            }
+
         }
         finally
         {

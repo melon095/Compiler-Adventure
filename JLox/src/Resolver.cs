@@ -28,21 +28,57 @@ internal class Resolver : IExpressionVisitor, IStatementVisitor
 
     public void Resolve(IEnumerable<Statement> statements)
     {
-        foreach (var s in statements)
-            Resolve(s);
+        foreach (var s in statements) Resolve(s);
     }
 
     private void ResolveLocal(Expression expr, Token name)
     {
-        // Reverse iteration
-        for (int i = Scopes.Count - 1; i >= 0; i--)
+        /*
+        
+            Fuck stacks in Java.
+
+            Since it extends Vector new elements are pushed to the back. Whereas in C# it's properly implemented and the new elements are pushed to the front.
+
+            So to get the correct scope we need to iterate through the stack from the back to the front.
+
+            // This has been taken from https://github.com/andrewtyped/cslox/blob/master/src/lox/Resolver.cs#L459
+            // Primarily cause i really can't be asked to fix this myself...
+        */
+
+        var tempScopes = new Stack<Dictionary<string, bool>>();
+
+        try
         {
-            if (Scopes.ElementAt(i).ContainsKey(name.Lexeme))
+            var origScopeSize = Scopes.Count;
+
+            for (int i = origScopeSize - 1; i >= 0; i--)
             {
-                Interpreter.Resolve(expr, Scopes.Count - 1 - i);
-                return;
+                var tempScope = Scopes.Pop();
+
+                tempScopes.Push(tempScope);
+
+                if (tempScope.ContainsKey(name.Lexeme))
+                {
+                    Interpreter.Resolve(expr, origScopeSize - 1 - i);
+                    return;
+                }
             }
         }
+        finally
+        {
+            while (tempScopes.TryPop(out var scope))
+                Scopes.Push(scope);
+        }
+
+
+        //for (int i = 0; i < Scopes.Count; i++)
+        //{
+        //    if (Scopes.ElementAt(i).ContainsKey(name.Lexeme))
+        //    {
+        //        Interpreter.Resolve(expr, i);
+        //        return;
+        //    }
+        //}
     }
 
     private void ResolveFunction(FunctionStatement function, FunctionType functionType)
@@ -52,8 +88,6 @@ internal class Resolver : IExpressionVisitor, IStatementVisitor
 
         try
         {
-
-
             BeginScope();
 
             foreach (var param in function.Params)
@@ -103,7 +137,6 @@ internal class Resolver : IExpressionVisitor, IStatementVisitor
         {
             BeginScope();
             Resolve(stmt.Statements);
-
         }
         finally { EndScope(); }
 
