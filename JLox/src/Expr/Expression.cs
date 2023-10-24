@@ -26,9 +26,10 @@ internal sealed record BinaryExpression(Expression Left, Token Op, Expression Ri
         var left = ip.Evaluate(Left);
         var right = ip.Evaluate(Right);
 
+        // Check first on the ones that don't need a number/double
+
         switch (Op.Type)
         {
-
             case TokenType.BangEqual:
                 {
                     if (left is null && right is null)
@@ -66,63 +67,30 @@ internal sealed record BinaryExpression(Expression Left, Token Op, Expression Ri
 
                     throw new RuntimeException(Op, "Unable to concatenate operands");
                 }
+        }
 
-            case TokenType.Minus:
-                {
-                    Interpreter.EnsureNumberOperands(Op, left, right);
+        // I think this looks cleaner to only check/cast once. Cause we know the Op requires a double.
+        Interpreter.EnsureNumberOperands(Op, left, right);
+        double dleft = (double)left!, dright = (double)right!;
 
-                    return (double)left! - (double)right!;
-                }
-
+        switch (Op.Type)
+        {
+            case TokenType.Minus: return dleft - dright;
             case TokenType.Slash:
                 {
-                    Interpreter.EnsureNumberOperands(Op, left, right);
-
-                    var l = (double)left!;
-                    var r = (double)right!;
-
-                    if (l == 0.0 || r == 0.0)
+                    if (dleft == 0.0 || dright == 0.0)
                     {
                         throw new RuntimeException(Op, "Division by zero");
                     }
 
-                    return (double)left / (double)right;
+                    return dleft / dright;
                 }
 
-            case TokenType.Star:
-                {
-                    Interpreter.EnsureNumberOperands(Op, left, right);
-
-                    return (double)left! * (double)right!;
-                }
-
-            case TokenType.Greater:
-                {
-                    Interpreter.EnsureNumberOperands(Op, left, right);
-
-                    return (double)left! > (double)right!;
-                }
-
-            case TokenType.GreaterEqual:
-                {
-                    Interpreter.EnsureNumberOperands(Op, left, right);
-
-                    return (double)left! >= (double)right!;
-                }
-
-            case TokenType.Less:
-                {
-                    Interpreter.EnsureNumberOperands(Op, left, right);
-
-                    return (double)left! < (double)right!;
-                }
-
-            case TokenType.LessEqual:
-                {
-                    Interpreter.EnsureNumberOperands(Op, left, right);
-
-                    return (double)left! <= (double)right!;
-                }
+            case TokenType.Star: return dleft * dright;
+            case TokenType.Greater: return dleft > dright;
+            case TokenType.GreaterEqual: return dleft >= dright;
+            case TokenType.Less: return dleft < dright;
+            case TokenType.LessEqual: return (double)left! <= (double)right!;
 
             default: return null;
         }
