@@ -1,12 +1,14 @@
-use std::fmt::Write;
-
-type Value = f64;
+use crate::Value;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum OpCode {
     Return,
     Constant(Value),
-
+    Addition,
+    Subtraction,
+    Multiplication,
+    Division,
+    Negate,
     Invalid,
 }
 
@@ -18,6 +20,11 @@ impl std::fmt::Display for OpCode {
         match self {
             OpCode::Return => write!(f, "RETURN"),
             OpCode::Constant(_) => write!(f, "CONSTANT"),
+            OpCode::Addition => write!(f, "ADD"),
+            OpCode::Subtraction => write!(f, "SUBTRACT"),
+            OpCode::Multiplication => write!(f, "MULTIPLY"),
+            OpCode::Division => write!(f, "DIVIDE"),
+            OpCode::Negate => write!(f, "NEGATE"),
             OpCode::Invalid => write!(f, "INVALID"),
         }
     }
@@ -26,58 +33,20 @@ impl std::fmt::Display for OpCode {
 // Not the prettiest name
 
 #[derive(Debug, Clone, Copy)]
-pub struct Operation {
+pub struct Instruction {
     pub line: u32,
     pub offset: u32,
     pub op: OpCode,
 }
 
-impl Operation {
+impl Instruction {
     pub fn new(op: OpCode, line: u32, offset: u32) -> Self {
         Self { op, line, offset }
-    }
-
-    pub fn disassemble(
-        &self,
-        #[allow(unused_variables)] chunk: &Chunk,
-        offset: usize,
-        f: &mut String,
-    ) -> anyhow::Result<usize> {
-        write!(f, "{:04} ", offset)?;
-
-        // TODO: https://github.com/rust-lang/rust/issues/53667
-        if let Some(last) = chunk.bytecode.last() {
-            if self.line == last.line {
-                write!(f, "   | ")?;
-            } else {
-                write!(f, "{:04} ", self.line)?;
-            }
-        }
-
-        // TODO: Find a better way to handle default cases. I don't like the idea of a catch-all.
-
-        match self.op {
-            OpCode::Return => {
-                write!(f, "{}", self.op)?;
-
-                Ok(offset + 1)
-            }
-            OpCode::Constant(value) => {
-                write!(f, "{:<16} '{}'", self.op, value)?;
-
-                Ok(offset + 2)
-            }
-            OpCode::Invalid => {
-                write!(f, "{}", self.op)?;
-
-                Ok(offset + 1)
-            }
-        }
     }
 }
 
 pub struct Chunk {
-    pub bytecode: Vec<Operation>,
+    pub bytecode: Vec<Instruction>,
 }
 
 impl Chunk {
@@ -88,6 +57,6 @@ impl Chunk {
     }
 
     pub fn write_op(&mut self, op: OpCode, line: u32) {
-        self.bytecode.push(Operation::new(op, line, 0));
+        self.bytecode.push(Instruction::new(op, line, 0));
     }
 }
