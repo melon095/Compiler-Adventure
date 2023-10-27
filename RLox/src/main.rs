@@ -1,13 +1,7 @@
-use std::{
-    io::{BufRead, Write},
-    path::Path,
-};
+use std::{io::Write, path::Path};
 
 use clap::Parser;
-use rlox::{
-    chunk::{self, Chunk, OpCode},
-    disassembler,
-};
+use rlox::{chunk::Chunk, disassembler};
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]

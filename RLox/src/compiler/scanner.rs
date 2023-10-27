@@ -1,7 +1,7 @@
 use parse_display::Display;
 use thiserror::Error;
 
-#[derive(Debug, Display, PartialEq, Eq)]
+#[derive(Debug, Display, PartialEq)]
 #[display(style = "CamelCase")]
 pub enum TokenType {
     // Single-character tokens.
@@ -28,9 +28,12 @@ pub enum TokenType {
     LessEqual,
 
     // Literals.
-    Identifier,
-    String,
-    Number,
+    #[display("{0}")]
+    Identifier(String),
+    #[display("{0}")]
+    String(String),
+    #[display("{0}")]
+    Number(f64),
 
     // Keywords.
     And,
@@ -55,11 +58,8 @@ pub enum TokenType {
     Eof,
 }
 
-// TODO: Something something &str
-
 pub struct Token {
     pub typ: TokenType,
-    pub lexeme: String,
     pub line: u32,
 }
 
@@ -67,24 +67,22 @@ pub struct Token {
 pub enum ScanError {
     #[error("Invalid token: {0}")]
     InvalidToken(char),
+
+    #[error("Unterminated multi-line comment on line {0}")]
+    UnterminatedComment(u32),
 }
 
-pub struct Scanner {
-    pub source: String,
-    pub start: usize,
-    pub current: usize,
+pub struct Scanner<'a> {
+    pub source: &'a String,
+    pub it: std::iter::Peekable<std::str::Chars<'a>>,
     pub line: u32,
 }
 
-// TODO: Maybe use Iterator
-// TODO: Tokens should not hold the text themselves, rather two integer indices into the source string
-
-impl Scanner {
-    pub fn new(source: String) -> Self {
+impl<'a> Scanner<'a> {
+    pub fn new(source: &'a String) -> Self {
         Self {
             source,
-            start: 0,
-            current: 0,
+            it: source.chars().peekable(),
             line: 1,
         }
     }
@@ -92,90 +90,83 @@ impl Scanner {
     fn make_token(&self, tok: TokenType) -> Token {
         Token {
             typ: tok,
-            lexeme: self.source[self.start..self.current].to_string(),
             line: self.line,
         }
     }
 
-    fn peek(&self) -> Option<char> {
-        if self.is_at_end() {
-            return None;
+    fn consume_multi_line_comment(&mut self) -> Result<(), ScanError> {
+        let mut depth = 1;
+
+        while depth > 0 {
+            let c = self.it.next();
+
+            if c.is_none() {
+                return Err(ScanError::UnterminatedComment(self.line));
+            }
+
+            let c = c.unwrap();
+
+            match c {
+                '\n' => self.line += 1,
+                '/' => {
+                    // lol
+                    if self.it.peek() == Some(&'*') {
+                        depth += 1;
+                        self.it.next();
+                    }
+                }
+                '*' => {
+                    // lol
+                    if self.it.peek() == Some(&'/') {
+                        depth -= 1;
+                        self.it.next();
+                    }
+                }
+                _ => (),
+            };
         }
 
-        self.source.chars().nth(self.current)
-    }
-
-    fn peek_next(&self) -> Option<char> {
-        if self.current + 1 >= self.source.len() {
-            return None;
-        }
-
-        self.source.chars().nth(self.current + 1)
-    }
-
-    fn match_char(&mut self, expected: char) -> bool {
-        if self.is_at_end() {
-            return false;
-        }
-
-        let Some(c) = self.source.chars().nth(self.current) else {
-            return false;
-        };
-
-        if c != expected {
-            return false;
-        }
-
-        self.current += 1;
-
-        true
-    }
-
-    fn is_at_end(&self) -> bool {
-        self.current >= self.source.len()
-    }
-
-    fn consume(&mut self) -> Option<char> {
-        if self.is_at_end() {
-            return None;
-        }
-
-        let c = self.source.chars().nth(self.current);
-        self.current += 1;
-
-        c
+        Ok(())
     }
 
     fn consume_while<F>(&mut self, predicate: F) -> Vec<char>
     where
-        F: Fn(char) -> bool,
+        F: Fn(&char) -> bool,
     {
-        let mut chars = Vec::new();
+        let mut chars: Vec<char> = Vec::new();
 
-        while let Some(c) = self.peek() {
+        loop {
+            let c = self.it.peek();
+
+            if c.is_none() {
+                break;
+            }
+
+            let c = c.unwrap();
+
             if !predicate(c) {
                 break;
             }
 
-            chars.push(c);
-            self.consume();
+            chars.push(*c);
+            self.it.next();
         }
 
         chars
     }
 
     fn choose_next(&mut self, expected: char, if_true: TokenType, if_false: TokenType) -> Token {
-        if self.match_char(expected) {
-            return self.make_token(if_true);
+        if let Some(next) = self.it.next() {
+            if next == expected {
+                return self.make_token(if_true);
+            }
         }
 
         self.make_token(if_false)
     }
 
     pub fn scan_token(&mut self) -> anyhow::Result<Token, ScanError> {
-        self.start = self.current;
-
-        let c = match self.consume() {
+        let c = match self.it.next() {
             None => return Ok(self.make_token(TokenType::Eof)),
             Some(c) => c,
         };
@@ -198,36 +189,19 @@ impl Scanner {
             '=' => Ok(self.choose_next('=', TokenType::EqualEqual, TokenType::Equal)),
             '<' => Ok(self.choose_next('=', TokenType::LessEqual, TokenType::Less)),
             '>' => Ok(self.choose_next('=', TokenType::GreaterEqual, TokenType::Greater)),
-            '/' => {
-                if self.match_char('/') {
-                    self.consume_while(|c| c != '\n');
-                    // New line
-                    self.consume();
-                    self.line += 1;
+            '/' => match self.it.next() {
+                Some('/') => {
+                    self.consume_while(|c| *c != '\n');
                     self.scan_token()
-                } else if self.match_char('*') {
-                    while let Some(c) = self.peek() {
-                        if c == '\n' {
-                            self.line += 1;
-                        }
-
-                        if c == '*' && self.peek_next() == Some('/') {
-                            self.consume();
-                            self.consume();
-                            break;
-                        }
-
-                        self.consume();
-                    }
-
-                    self.scan_token()
-                } else {
-                    Ok(self.make_token(TokenType::Slash))
                 }
-            }
+                Some('*') => {
+                    self.consume_multi_line_comment()?;
+                    self.scan_token()
+                }
+                _ => Ok(self.make_token(TokenType::Slash)),
+            },
 
             // Whitespace
-            // TODO: Figure out a better way to do this.
             ' ' | '\t' | '\r' => self.scan_token(),
             '\n' => {
                 self.line += 1;
@@ -248,58 +222,57 @@ mod tests {
 
     #[test]
     fn test_scan_token() {
-        let mut scanner = Scanner::new("()".to_string());
+        let text = "()".to_string();
+        let mut scanner = Scanner::new(&text);
         let tok = scanner.scan_token().unwrap();
         assert_eq!(tok.typ, TokenType::LeftParen);
-        assert_eq!(tok.lexeme, "(");
         assert_eq!(tok.line, 1);
 
         let tok = scanner.scan_token().unwrap();
         assert_eq!(tok.typ, TokenType::RightParen);
-        assert_eq!(tok.lexeme, ")");
         assert_eq!(tok.line, 1);
 
         let tok = scanner.scan_token().unwrap();
         assert_eq!(tok.typ, TokenType::Eof);
-        assert_eq!(tok.lexeme, "");
         assert_eq!(tok.line, 1);
     }
 
     #[test]
     fn test_scanner_comment() {
-        let mut scanner = Scanner::new("// This is a comment\n()".to_string());
+        let text = "// This is a comment\n()".to_string();
+        let mut scanner = Scanner::new(&text);
         let tok = scanner.scan_token().unwrap();
         assert_eq!(tok.typ, TokenType::LeftParen);
-        assert_eq!(tok.lexeme, "(");
         assert_eq!(tok.line, 2);
 
         let tok = scanner.scan_token().unwrap();
         assert_eq!(tok.typ, TokenType::RightParen);
-        assert_eq!(tok.lexeme, ")");
         assert_eq!(tok.line, 2);
 
         let tok = scanner.scan_token().unwrap();
         assert_eq!(tok.typ, TokenType::Eof);
-        assert_eq!(tok.lexeme, "");
         assert_eq!(tok.line, 2);
     }
 
     #[test]
     fn test_multiline_comment() {
-        let mut scanner = Scanner::new("/* This\n\n is a\n\n comment\n\n */()".to_string());
+        let text =
+            "(/* This\n\n is /* \nDepth 2\n\r\t\t\t\t\t */ a\n\n comment\n\n */()".to_string();
+        let mut scanner = Scanner::new(&text);
         let tok = scanner.scan_token().unwrap();
         assert_eq!(tok.typ, TokenType::LeftParen);
-        assert_eq!(tok.lexeme, "(");
-        assert_eq!(tok.line, 7);
+        assert_eq!(tok.line, 1);
+
+        let tok = scanner.scan_token().unwrap();
+        assert_eq!(tok.typ, TokenType::LeftParen);
+        assert_eq!(tok.line, 9);
 
         let tok = scanner.scan_token().unwrap();
         assert_eq!(tok.typ, TokenType::RightParen);
-        assert_eq!(tok.lexeme, ")");
-        assert_eq!(tok.line, 7);
+        assert_eq!(tok.line, 9);
 
         let tok = scanner.scan_token().unwrap();
         assert_eq!(tok.typ, TokenType::Eof);
-        assert_eq!(tok.lexeme, "");
-        assert_eq!(tok.line, 7);
+        assert_eq!(tok.line, 9);
     }
 }
