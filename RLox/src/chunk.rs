@@ -1,5 +1,6 @@
 use crate::Value;
 
+// Note: parse_display crate won't work here cause of OP_ and elements containing data.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum OpCode {
     Return,
