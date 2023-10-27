@@ -1,7 +1,36 @@
+use std::collections::HashMap;
+use std::sync::OnceLock;
+
 use parse_display::Display;
 use thiserror::Error;
 
-#[derive(Debug, Display, PartialEq)]
+static GLOBAL_KEYWORDS: OnceLock<HashMap<&str, TokenType>> = OnceLock::new();
+
+fn init_keywords() -> HashMap<&'static str, TokenType> {
+    let mut keywords: HashMap<&str, TokenType> = HashMap::new();
+
+    keywords.insert("and", TokenType::And);
+    keywords.insert("class", TokenType::Class);
+    keywords.insert("else", TokenType::Else);
+    keywords.insert("false", TokenType::False);
+    keywords.insert("for", TokenType::For);
+    keywords.insert("fun", TokenType::Function);
+    keywords.insert("if", TokenType::If);
+    keywords.insert("nil", TokenType::Nil);
+    keywords.insert("or", TokenType::Or);
+    keywords.insert("print", TokenType::Print);
+    keywords.insert("return", TokenType::Return);
+    keywords.insert("super", TokenType::Super);
+    keywords.insert("this", TokenType::This);
+    keywords.insert("true", TokenType::True);
+    keywords.insert("let", TokenType::Let);
+    keywords.insert("mutable", TokenType::Mutable);
+    keywords.insert("while", TokenType::While);
+
+    keywords
+}
+
+#[derive(Debug, Display, PartialEq, Clone)]
 #[display(style = "CamelCase")]
 pub enum TokenType {
     // Single-character tokens.
@@ -83,6 +112,8 @@ pub struct Scanner<'a> {
 
 impl<'a> Scanner<'a> {
     pub fn new(source: &'a String) -> Self {
+        _ = GLOBAL_KEYWORDS.get_or_init(init_keywords);
+
         Self {
             source,
             it: source.chars().peekable(),
@@ -161,6 +192,7 @@ impl<'a> Scanner<'a> {
     }
 
     fn scan_identifier(&mut self, c: char) -> Result<Token, ScanError> {
+        let keywords = GLOBAL_KEYWORDS.get().unwrap();
         let mut ident = String::from(c);
 
         ident.push_str(
@@ -170,7 +202,11 @@ impl<'a> Scanner<'a> {
                 .collect::<String>(),
         );
 
-        return Ok(self.make_token(token_type_from_ident(ident)));
+        if let Some(keyword) = keywords.get(&ident.as_str()) {
+            return Ok(self.make_token(keyword.clone()));
+        }
+
+        return Ok(self.make_token(TokenType::Literal(ident)));
     }
 
     fn consume_while<F>(&mut self, predicate: F) -> Vec<char>
@@ -263,11 +299,6 @@ impl<'a> Scanner<'a> {
     }
 }
 
-fn token_type_from_ident(ident: String) -> TokenType {
-    // TODO: Keywords
-    TokenType::Literal(ident)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -290,9 +321,16 @@ mod tests {
             TokenType::Number(12.5),
             TokenType::Comma,
             TokenType::Literal("a".to_string()),
+            TokenType::Semicolon,
+            TokenType::Let,
+            TokenType::Literal("b".to_string()),
+            TokenType::Equal,
+            TokenType::Number(5.0),
+            TokenType::Star,
+            TokenType::Number(20.0),
         ];
 
-        let text = r#"()}{,some_variable = "Hi :)"-;, 42 12.5, a"#.to_string();
+        let text = r#"()}{,some_variable = "Hi :)"-;, 42 12.5, a; let b = 5 * 20"#.to_string();
         let mut scanner = Scanner::new(&text);
 
         for expected in expected {
