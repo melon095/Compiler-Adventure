@@ -29,7 +29,7 @@ pub enum TokenType {
 
     // Literals.
     #[display("{0}")]
-    Identifier(String),
+    Literal(String),
     #[display("{0}")]
     String(String),
     #[display("{0}")]
@@ -70,6 +70,9 @@ pub enum ScanError {
 
     #[error("Unterminated multi-line comment on line {0}")]
     UnterminatedComment(u32),
+
+    #[error("Unterminated string on line {0}")]
+    UnterminatedString(u32),
 }
 
 pub struct Scanner<'a> {
@@ -127,6 +130,47 @@ impl<'a> Scanner<'a> {
         }
 
         Ok(())
+    }
+
+    fn scan_string(&mut self) -> Result<Token, ScanError> {
+        let chars: Vec<char> = self.consume_while(|c| *c != '"');
+
+        if self.it.next().is_none() {
+            return Err(ScanError::UnterminatedString(self.line));
+        }
+
+        Ok(self.make_token(TokenType::String(chars.into_iter().collect())))
+    }
+
+    fn scan_number(&mut self, c: char) -> Result<Token, ScanError> {
+        let mut number: String = String::from(c);
+
+        let mut rest_num = self.consume_while(|c| c.is_ascii_digit());
+
+        if self.it.peek() == Some(&'.') {
+            rest_num.push(self.it.next().unwrap()); // Unwrap is fine here.
+
+            rest_num.extend(self.consume_while(|c| c.is_ascii_digit()));
+        }
+
+        number.extend(rest_num);
+
+        let num = number.parse::<f64>().expect("Invalid number"); // TODO: Handle ParseFloatError
+
+        Ok(self.make_token(TokenType::Number(num)))
+    }
+
+    fn scan_identifier(&mut self, c: char) -> Result<Token, ScanError> {
+        let mut ident = String::from(c);
+
+        ident.push_str(
+            &self
+                .consume_while(|c| c.is_alphanumeric() || *c == '_')
+                .into_iter()
+                .collect::<String>(),
+        );
+
+        return Ok(self.make_token(token_type_from_ident(ident)));
     }
 
     fn consume_while<F>(&mut self, predicate: F) -> Vec<char>
@@ -207,13 +251,21 @@ impl<'a> Scanner<'a> {
                 self.line += 1;
                 self.scan_token()
             }
+
             // Long tokens
-            '"' => todo!("Strings"),
+            '"' => self.scan_string(),
+            c if c.is_numeric() => self.scan_number(c),
+            c if c.is_alphabetic() || c == '_' => self.scan_identifier(c),
 
             // Unknown
             c => Err(ScanError::InvalidToken(c)),
         }
     }
+}
+
+fn token_type_from_ident(ident: String) -> TokenType {
+    // TODO: Keywords
+    TokenType::Literal(ident)
 }
 
 #[cfg(test)]
@@ -222,19 +274,32 @@ mod tests {
 
     #[test]
     fn test_scan_token() {
-        let text = "()".to_string();
+        let expected = vec![
+            TokenType::LeftParen,
+            TokenType::RightParen,
+            TokenType::RightBrace,
+            TokenType::LeftBrace,
+            TokenType::Comma,
+            TokenType::Literal("some_variable".to_string()),
+            TokenType::Equal,
+            TokenType::String("Hi :)".to_string()),
+            TokenType::Minus,
+            TokenType::Semicolon,
+            TokenType::Comma,
+            TokenType::Number(42.0),
+            TokenType::Number(12.5),
+            TokenType::Comma,
+            TokenType::Literal("a".to_string()),
+        ];
+
+        let text = r#"()}{,some_variable = "Hi :)"-;, 42 12.5, a"#.to_string();
         let mut scanner = Scanner::new(&text);
-        let tok = scanner.scan_token().unwrap();
-        assert_eq!(tok.typ, TokenType::LeftParen);
-        assert_eq!(tok.line, 1);
 
-        let tok = scanner.scan_token().unwrap();
-        assert_eq!(tok.typ, TokenType::RightParen);
-        assert_eq!(tok.line, 1);
-
-        let tok = scanner.scan_token().unwrap();
-        assert_eq!(tok.typ, TokenType::Eof);
-        assert_eq!(tok.line, 1);
+        for expected in expected {
+            let tok = scanner.scan_token().unwrap();
+            assert_eq!(tok.typ, expected);
+            assert_eq!(tok.line, 1)
+        }
     }
 
     #[test]
