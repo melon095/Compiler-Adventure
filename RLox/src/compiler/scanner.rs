@@ -14,17 +14,18 @@ fn init_keywords() -> HashMap<&'static str, TokenType> {
     keywords.insert("else", TokenType::Else);
     keywords.insert("false", TokenType::False);
     keywords.insert("for", TokenType::For);
-    keywords.insert("fun", TokenType::Function);
+    keywords.insert("fn", TokenType::Function);
     keywords.insert("if", TokenType::If);
     keywords.insert("nil", TokenType::Nil);
     keywords.insert("or", TokenType::Or);
+    // TODO: Remove this
     keywords.insert("print", TokenType::Print);
     keywords.insert("return", TokenType::Return);
     keywords.insert("super", TokenType::Super);
-    keywords.insert("this", TokenType::This);
+    keywords.insert("self", TokenType::This);
     keywords.insert("true", TokenType::True);
     keywords.insert("let", TokenType::Let);
-    keywords.insert("mutable", TokenType::Mutable);
+    keywords.insert("mut", TokenType::Mutable);
     keywords.insert("while", TokenType::While);
 
     keywords
@@ -331,6 +332,32 @@ mod tests {
         ];
 
         let text = r#"()}{,some_variable = "Hi :)"-;, 42 12.5, a; let b = 5 * 20"#.to_string();
+        let mut scanner = Scanner::new(&text);
+
+        for expected in expected {
+            let tok = scanner.scan_token().unwrap();
+            assert_eq!(tok.typ, expected);
+            assert_eq!(tok.line, 1)
+        }
+    }
+
+    // TODO: Implement this.
+    #[test]
+    fn test_string_interpolation() {
+        let text = r#"let mut foo = 5; return "The number is ${foo}";"#.to_string();
+
+        let expected = vec![
+            TokenType::Let,
+            TokenType::Mutable,
+            TokenType::Literal("foo".to_string()),
+            TokenType::Equal,
+            TokenType::Number(5.0),
+            TokenType::Semicolon,
+            TokenType::Return,
+            TokenType::String("The number is ${foo}".to_string()),
+            TokenType::Semicolon,
+        ];
+
         let mut scanner = Scanner::new(&text);
 
         for expected in expected {
