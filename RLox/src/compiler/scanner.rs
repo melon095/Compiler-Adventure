@@ -1,8 +1,7 @@
 use std::collections::HashMap;
 use std::sync::OnceLock;
 
-use parse_display::Display;
-use thiserror::Error;
+use super::{token::Token, ScanError, TokenType};
 
 static GLOBAL_KEYWORDS: OnceLock<HashMap<&str, TokenType>> = OnceLock::new();
 
@@ -31,84 +30,11 @@ fn init_keywords() -> HashMap<&'static str, TokenType> {
     keywords
 }
 
-#[derive(Debug, Display, PartialEq, Clone)]
-#[display(style = "CamelCase")]
-pub enum TokenType {
-    // Single-character tokens.
-    LeftParen,
-    RightParen,
-    LeftBrace,
-    RightBrace,
-    Comma,
-    Dot,
-    Minus,
-    Plus,
-    Semicolon,
-    Slash,
-    Star,
-
-    // One or two character tokens.
-    Bang,
-    BangEqual,
-    Equal,
-    EqualEqual,
-    Greater,
-    GreaterEqual,
-    Less,
-    LessEqual,
-
-    // Literals.
-    #[display("{0}")]
-    Literal(String),
-    #[display("{0}")]
-    String(String),
-    #[display("{0}")]
-    Number(f64),
-
-    // Keywords.
-    And,
-    Class,
-    Else,
-    False,
-    Function,
-    For,
-    If,
-    Nil,
-    Or,
-    Print,
-    Return,
-    Super,
-    /// Self
-    This,
-    True,
-    Let,
-    Mutable,
-    While,
-
-    Eof,
-}
-
-pub struct Token {
-    pub typ: TokenType,
-    pub line: u32,
-}
-
-#[derive(Debug, Error)]
-pub enum ScanError {
-    #[error("Invalid token: {0}")]
-    InvalidToken(char),
-
-    #[error("Unterminated multi-line comment on line {0}")]
-    UnterminatedComment(u32),
-
-    #[error("Unterminated string on line {0}")]
-    UnterminatedString(u32),
-}
-
 pub struct Scanner<'a> {
-    pub source: &'a String,
-    pub it: std::iter::Peekable<std::str::Chars<'a>>,
-    pub line: u32,
+    // TODO: Remove 'source'
+    source: &'a String,
+    it: std::iter::Peekable<std::str::Chars<'a>>,
+    line: u32,
 }
 
 impl<'a> Scanner<'a> {
@@ -124,7 +50,7 @@ impl<'a> Scanner<'a> {
 
     fn make_token(&self, tok: TokenType) -> Token {
         Token {
-            typ: tok,
+            token_type: tok,
             line: self.line,
         }
     }
@@ -298,6 +224,22 @@ impl<'a> Scanner<'a> {
             c => Err(ScanError::InvalidToken(c)),
         }
     }
+
+    pub fn scan_up_to_eof(mut self) -> anyhow::Result<Vec<Token>, ScanError> {
+        let mut tokens = Vec::new();
+
+        loop {
+            let token = self.scan_token()?;
+
+            if token.token_type == TokenType::Eof {
+                break;
+            }
+
+            tokens.push(token);
+        }
+
+        Ok(tokens)
+    }
 }
 
 #[cfg(test)]
@@ -336,7 +278,7 @@ mod tests {
 
         for expected in expected {
             let tok = scanner.scan_token().unwrap();
-            assert_eq!(tok.typ, expected);
+            assert_eq!(tok.token_type, expected);
             assert_eq!(tok.line, 1)
         }
     }
@@ -362,7 +304,7 @@ mod tests {
 
         for expected in expected {
             let tok = scanner.scan_token().unwrap();
-            assert_eq!(tok.typ, expected);
+            assert_eq!(tok.token_type, expected);
             assert_eq!(tok.line, 1)
         }
     }
@@ -372,15 +314,15 @@ mod tests {
         let text = "// This is a comment\n()".to_string();
         let mut scanner = Scanner::new(&text);
         let tok = scanner.scan_token().unwrap();
-        assert_eq!(tok.typ, TokenType::LeftParen);
+        assert_eq!(tok.token_type, TokenType::LeftParen);
         assert_eq!(tok.line, 2);
 
         let tok = scanner.scan_token().unwrap();
-        assert_eq!(tok.typ, TokenType::RightParen);
+        assert_eq!(tok.token_type, TokenType::RightParen);
         assert_eq!(tok.line, 2);
 
         let tok = scanner.scan_token().unwrap();
-        assert_eq!(tok.typ, TokenType::Eof);
+        assert_eq!(tok.token_type, TokenType::Eof);
         assert_eq!(tok.line, 2);
     }
 
@@ -390,19 +332,19 @@ mod tests {
             "(/* This\n\n is /* \nDepth 2\n\r\t\t\t\t\t */ a\n\n comment\n\n */()".to_string();
         let mut scanner = Scanner::new(&text);
         let tok = scanner.scan_token().unwrap();
-        assert_eq!(tok.typ, TokenType::LeftParen);
+        assert_eq!(tok.token_type, TokenType::LeftParen);
         assert_eq!(tok.line, 1);
 
         let tok = scanner.scan_token().unwrap();
-        assert_eq!(tok.typ, TokenType::LeftParen);
+        assert_eq!(tok.token_type, TokenType::LeftParen);
         assert_eq!(tok.line, 9);
 
         let tok = scanner.scan_token().unwrap();
-        assert_eq!(tok.typ, TokenType::RightParen);
+        assert_eq!(tok.token_type, TokenType::RightParen);
         assert_eq!(tok.line, 9);
 
         let tok = scanner.scan_token().unwrap();
-        assert_eq!(tok.typ, TokenType::Eof);
+        assert_eq!(tok.token_type, TokenType::Eof);
         assert_eq!(tok.line, 9);
     }
 }

@@ -1,9 +1,5 @@
-use crate::{
-    chunk::{Chunk, OpCode},
-    disassembler::disassemble_instruction,
-    Value,
-};
-use std::{collections::VecDeque, fmt::Write};
+use crate::{chunk::Chunk, op_codes::OpCode, Value};
+use std::collections::VecDeque;
 use thiserror::Error;
 
 const STACK_MAX: usize = 256;
@@ -25,23 +21,14 @@ macro_rules! binary_op {
 
 #[derive(Debug, Error)]
 pub enum InterpretError {
-    #[error("Compile error: {0}")]
-    CompileError(String),
-
     #[error("Stack overflow")]
     StackOverflow,
-}
-
-// TODO: Idk
-impl From<std::fmt::Error> for InterpretError {
-    fn from(error: std::fmt::Error) -> Self {
-        Self::CompileError(error.to_string())
-    }
 }
 
 pub struct VM {
     // TODO: Remove 'Option'.
     pub chunk: Option<Chunk>,
+
     // TODO: We might be able to remove the instruction pointer.
     pub ip: usize,
     pub stack: VecDeque<Value>,
@@ -80,51 +67,51 @@ impl VM {
 
         // TODO: Fix clone.
         let iter = self.chunk.as_ref().unwrap().bytecode.clone();
-        for instruction in iter.iter() {
-            if cfg!(debug_assertions) {
-                let mut f = String::new();
-                f.push_str("Stack: ");
+        for op in iter.iter() {
+            // if cfg!(debug_assertions) {
+            //     let mut f = String::new();
+            //     f.push_str("Stack: ");
 
-                for item in self.stack.iter() {
-                    write!(f, "[ {} ]", item)?;
-                }
+            //     for item in self.stack.iter() {
+            //         write!(f, "[ {} ]", item).expect("Failed to write to string");
+            //     }
 
-                f.push('\n');
+            //     f.push('\n');
 
-                disassemble_instruction(
-                    &self.chunk.as_ref().unwrap(),
-                    instruction,
-                    self.ip,
-                    &mut f,
-                )
-                .unwrap();
-                println!("{}", f);
-            }
+            //     disassemble_instruction(
+            //         &self.chunk.as_ref().unwrap(),
+            //         instruction,
+            //         self.ip,
+            //         &mut f,
+            //     )
+            //     .unwrap();
+            //     println!("{}", f);
+            // }
 
-            match instruction.op {
-                OpCode::Return => {
-                    if self.stack.is_empty() {
-                        todo!("Pop from empty stack")
-                    }
+            // match op {
+            //     OpCode::Return => {
+            //         if self.stack.is_empty() {
+            //             todo!("Pop from empty stack")
+            //         }
 
-                    println!("{}", self.stack_pop().unwrap());
+            //         println!("{}", self.stack_pop().unwrap());
 
-                    return Ok(());
-                }
-                OpCode::Constant(constant) => self.stack_push(constant)?,
-                OpCode::Addition => binary_op!(self, +),
-                OpCode::Division => binary_op!(self, /),
-                OpCode::Multiplication => binary_op!(self, *),
-                OpCode::Subtraction => binary_op!(self, -),
-                OpCode::Negate => {
-                    if let Some(number) = self.stack_pop() {
-                        self.stack_push(-number)?;
-                    } else {
-                        todo!("Expected number")
-                    }
-                }
-                OpCode::Invalid => todo!(),
-            }
+            //         return Ok(());
+            //     }
+            //     OpCode::Constant(constant) => self.stack_push(constant)?,
+            //     OpCode::Addition => binary_op!(self, +),
+            //     OpCode::Division => binary_op!(self, /),
+            //     OpCode::Multiplication => binary_op!(self, *),
+            //     OpCode::Subtraction => binary_op!(self, -),
+            //     OpCode::Negate => {
+            //         if let Some(number) = self.stack_pop() {
+            //             self.stack_push(-number)?;
+            //         } else {
+            //             todo!("Expected number")
+            //         }
+            //     }
+            //     OpCode::Invalid => todo!(),
+            // }
         }
 
         Ok(())

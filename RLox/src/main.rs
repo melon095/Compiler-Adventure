@@ -22,9 +22,9 @@ fn run_file(args: Args, file_path: &Path, vm: &mut rlox::vm::VM) -> anyhow::Resu
 
     rlox::compiler::compile(file, &mut chunk)?;
 
-    if args.disassemble {
-        disassembler::disassemble_chunk(&chunk, "Test Chunk")?;
-    }
+    // if args.disassemble {
+    //     disassembler::disassemble_chunk(&chunk, "Test Chunk")?;
+    // }
 
     vm.interpret(chunk)?;
 
@@ -50,9 +50,9 @@ fn run_repl(args: Args, vm: &mut rlox::vm::VM) -> anyhow::Result<()> {
 
         rlox::compiler::compile(line, &mut chunk)?;
 
-        if args.disassemble {
-            disassembler::disassemble_chunk(&chunk, "Test Chunk")?;
-        }
+        // if args.disassemble {
+        //     disassembler::disassemble_chunk(&chunk, "Test Chunk")?;
+        // }
 
         vm.interpret(chunk)?;
         count += 1;
