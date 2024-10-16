@@ -11,6 +11,7 @@ sources = [
     'Source/Program.cc',
     'Source/Lexer/Lexer.cc',
     'Source/Lexer/Tokens.cc',
+    'Source/AST/BaseExpression.cc',
     'Source/AST/BinaryExpression.cc',
     'Source/AST/CallExpression.cc',
     'Source/AST/FunctionStatement.cc',
@@ -20,6 +21,8 @@ sources = [
     'Source/AST/Program.cc',
     'Source/Parser/Parser.cc',
     'Source/Parser/Diagnostician.cc',
+    'Source/Codegen/CodegenContext.cc',
+    'Source/Codegen/CodegenResult.cc',
 ]
 
 llvm_dep = cxx.find_library('LLVM', required: true)

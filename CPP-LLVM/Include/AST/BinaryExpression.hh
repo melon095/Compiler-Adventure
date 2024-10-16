@@ -21,6 +21,7 @@ namespace K::AST
 		BinaryExpression(TokenID op, ExpressionPtr lhs, ExpressionPtr rhs);
 
 		void Dump(int indent, std::ostream& os) const override;
+		Codegen::CodegenResult Codegen(Codegen::CodegenContextPtr context) const override;
 
 	  public:
 		BinaryOperator Op;

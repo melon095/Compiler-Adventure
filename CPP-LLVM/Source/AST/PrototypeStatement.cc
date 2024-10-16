@@ -3,7 +3,8 @@
 namespace K::AST
 {
 	PrototypeStatement::PrototypeStatement(const std::string& name, std::vector<std::string> args)
-		: Name(name)
+		: BaseExpression()
+		, Name(name)
 		, Args(args)
 	{
 	}
@@ -20,5 +21,10 @@ namespace K::AST
 			}
 		}
 		os << "])" << std::endl;
+	}
+
+	Codegen::CodegenResult PrototypeStatement::Codegen(Codegen::CodegenContextPtr context) const
+	{
+		return Codegen::CodegenResult::NotImplemented(this->shared_from_this());
 	}
 } // namespace K::AST

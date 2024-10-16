@@ -13,7 +13,8 @@ namespace K::AST
 	  public:
 		PrototypeStatement(const std::string& name, std::vector<std::string> args);
 
-		void Dump(int indent, std::ostream& os) const;
+		void Dump(int indent, std::ostream& os) const override;
+		Codegen::CodegenResult Codegen(Codegen::CodegenContextPtr context) const override;
 
 	  public:
 		std::string Name;

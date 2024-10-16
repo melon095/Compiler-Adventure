@@ -4,6 +4,7 @@
 #include <Parser/IParse.hh>
 
 #include <map>
+#include <memory>
 
 namespace K
 {
@@ -37,6 +38,18 @@ namespace K
 		Token Consume(TokenID token, const std::string& message = "");
 		bool IsAtEnd() const;
 		int GetPrecedence(TokenID op);
+
+		template<typename TClass, typename... TArgs>
+		std::shared_ptr<TClass> CreateASTNode(TArgs&&... args) requires std::derived_from<TClass, AST::BaseExpression>
+		{
+			auto node = std::make_shared<TClass>(std::forward<TArgs>(args)...);
+
+			auto token = GetToken();
+
+			node->SetDebugInfo(token.Line, token.Column);
+
+			return node;
+		}
 
 	  private:
 		Tokens m_Tokens;

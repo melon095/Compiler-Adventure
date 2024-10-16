@@ -48,7 +48,7 @@ namespace K
 	{
 		auto token = Consume(TokenID::Number, "Expected number");
 
-		return std::make_unique<AST::NumberExpression>(token.Value);
+		return CreateASTNode<AST::NumberExpression>(token.Value);
 	}
 
 	AST::ExpressionPtr Parser::ParseIdentifierExpression()
@@ -58,7 +58,7 @@ namespace K
 
 		if(!CheckToken(TokenID::LParen))
 		{
-			return std::make_unique<AST::VariableExpression>(id);
+			return CreateASTNode<AST::VariableExpression>(id);
 		}
 
 		AdvanceToken(); // (
@@ -83,7 +83,7 @@ namespace K
 			}
 		}
 
-		return std::make_unique<AST::CallExpression>(id, std::move(args));
+		return CreateASTNode<AST::CallExpression>(id, std::move(args));
 	}
 
 	AST::ExpressionPtr Parser::ParsePrimary()
@@ -139,7 +139,7 @@ namespace K
 				rhs = ParseBinOpRHS(tokenPrec + 1, std::move(rhs));
 			}
 
-			lhs = std::make_unique<AST::BinaryExpression>(token.Id, std::move(lhs), std::move(rhs));
+			lhs = CreateASTNode<AST::BinaryExpression>(token.Id, std::move(lhs), std::move(rhs));
 		}
 	}
 
@@ -171,7 +171,7 @@ namespace K
 
 		Consume(TokenID::RParen, "Expected ')'");
 
-		return std::make_unique<AST::PrototypeStatement>(name, std::move(args));
+		return CreateASTNode<AST::PrototypeStatement>(name, std::move(args));
 	}
 
 	AST::ExpressionPtr Parser::ParseDefinition()
@@ -190,8 +190,8 @@ namespace K
 			return nullptr;
 		}
 
-		auto prototypeStatement = dynamic_unique_ptr_cast<AST::PrototypeStatement>(std::move(prototype));
-		return std::make_unique<AST::FunctionStatement>(std::move(prototypeStatement), std::move(body));
+		auto prototypeStatement = std::dynamic_pointer_cast<AST::PrototypeStatement>(prototype);
+		return CreateASTNode<AST::FunctionStatement>(std::move(prototypeStatement), std::move(body));
 	}
 
 	AST::ExpressionPtr Parser::ParseExtern()
@@ -206,8 +206,8 @@ namespace K
 		auto expr = ParseExpression();
 		if(expr)
 		{
-			auto prototype = std::make_unique<AST::PrototypeStatement>("", std::vector<std::string>());
-			return std::make_unique<AST::FunctionStatement>(std::move(prototype), std::move(expr));
+			auto prototype = CreateASTNode<AST::PrototypeStatement>("", std::vector<std::string>());
+			return CreateASTNode<AST::FunctionStatement>(std::move(prototype), std::move(expr));
 		}
 
 		return nullptr;

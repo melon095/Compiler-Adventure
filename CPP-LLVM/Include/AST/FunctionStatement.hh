@@ -13,6 +13,7 @@ namespace K::AST
 		FunctionStatement(PrototypeStatementPtr prototype, ExpressionPtr body);
 
 		void Dump(int indent, std::ostream& os) const override;
+		Codegen::CodegenResult Codegen(Codegen::CodegenContextPtr context) const override;
 
 	  public:
 		PrototypeStatementPtr Prototype;

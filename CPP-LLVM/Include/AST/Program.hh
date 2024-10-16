@@ -5,7 +5,7 @@
 
 namespace K::AST
 {
-	class Program : public IDumpable
+	class Program : public BaseExpression
 	{
 	  public:
 		Program(std::vector<ExpressionPtr> expressions);
@@ -14,6 +14,7 @@ namespace K::AST
 		const std::vector<ExpressionPtr>& GetExpressions() const;
 
 		void Dump(int ident, std::ostream& os) const override;
+		Codegen::CodegenResult Codegen(Codegen::CodegenContextPtr context) const override;
 
 	  private:
 		std::vector<ExpressionPtr> m_Expressions;

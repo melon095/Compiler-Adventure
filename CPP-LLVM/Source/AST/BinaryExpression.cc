@@ -19,7 +19,8 @@ namespace K::AST
 	}
 
 	BinaryExpression::BinaryExpression(BinaryOperator op, ExpressionPtr lhs, ExpressionPtr rhs)
-		: Op(op)
+		: BaseExpression()
+		, Op(op)
 		, LHS(std::move(lhs))
 		, RHS(std::move(rhs))
 	{
@@ -36,5 +37,31 @@ namespace K::AST
 
 		LHS->Dump(indent + 2, os);
 		RHS->Dump(indent + 2, os);
+	}
+
+	Codegen::CodegenResult BinaryExpression::Codegen(Codegen::CodegenContextPtr context) const
+	{
+		return Codegen::CodegenResult::NotImplemented(this->shared_from_this());
+		// auto& builder = context->GetBuilder();
+
+		// auto lhs = LHS->Codegen(context);
+		// auto rhs = RHS->Codegen(context);
+
+		// switch(Op)
+		// {
+		//     case BinaryOperator::Add:
+		//         return builder.CreateFAdd(lhs, rhs, "addtmp");
+		//     case BinaryOperator::Sub:
+		//         return builder.CreateFSub(lhs, rhs, "subtmp");
+		//     case BinaryOperator::Mul:
+		//         return builder.CreateFMul(lhs, rhs, "multmp");
+		//     case BinaryOperator::Div:
+		//         return builder.CreateFDiv(lhs, rhs, "divtmp");
+		//     case BinaryOperator::Less:
+		//         lhs = builder.CreateFCmpULT(lhs, rhs, "cmptmp");
+		//         return builder.CreateUIToFP(lhs, llvm::Type::getDoubleTy(context->GetContext()), "booltmp");
+		//     default:
+		//         throw std::runtime_error("Invalid binary operator");
+		// }
 	}
 } // namespace K::AST

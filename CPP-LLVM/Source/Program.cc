@@ -1,5 +1,6 @@
 #include <AST/BinaryExpression.hh>
 #include <AST/VariableExpression.hh>
+#include <Codegen/CodegenContext.hh>
 #include <Lexer/Lexer.hh>
 #include <Parser/Parser.hh>
 #include <iostream>
@@ -74,11 +75,12 @@ int main()
 
 	auto parser = K::Parser(tokens);
 
+	K::AST::ProgramPtr program;
 	try
 	{
-		auto ast = parser.Parse();
+		program = parser.Parse();
 
-		ast->Dump(0, std::cout);
+		program->Dump(0, std::cout);
 	}
 	catch(const std::runtime_error& e)
 	{
@@ -87,5 +89,22 @@ int main()
 												{ std::cerr << diagnostic << std::endl; });
 
 		return 1;
+	}
+
+	auto context = std::make_shared<llvm::LLVMContext>();
+	auto module = std::make_shared<llvm::Module>("main", *context);
+
+	auto codegenContext = std::make_shared<K::Codegen::CodegenContext>(context, module);
+
+	auto result = program->Codegen(codegenContext);
+
+	if(result.IsOk())
+	{
+		std::cout << "Codegen successful" << std::endl;
+	}
+	else
+	{
+		std::cerr << "Codegen failed" << std::endl;
+		result.Dump(0, std::cout);
 	}
 }
