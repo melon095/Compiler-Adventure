@@ -1,0 +1,23 @@
+#pragma once
+
+#include <AST/BaseExpression.hh>
+#include <AST/PrototypeStatement.hh>
+
+#include <memory>
+
+namespace K::AST
+{
+	class FunctionStatement : public BaseExpression
+	{
+	  public:
+		FunctionStatement(PrototypeStatementPtr prototype, ExpressionPtr body);
+
+		void Dump(int indent, std::ostream& os) const override;
+
+	  public:
+		PrototypeStatementPtr Prototype;
+		ExpressionPtr Body;
+	};
+
+	SMARTPTR(FunctionStatement)
+} // namespace K::AST
