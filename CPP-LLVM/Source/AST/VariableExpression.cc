@@ -15,6 +15,17 @@ namespace K::AST
 
 	Codegen::CodegenResult VariableExpression::Codegen(Codegen::CodegenContextPtr context) const
 	{
-		return Codegen::CodegenResult::NotImplemented(this->shared_from_this());
+		auto builder = context->GetBuilder();
+		auto& namedValues = context->GetNamedValues();
+
+		auto* value = namedValues[Name];
+		if(!value)
+		{
+			return Codegen::CodegenResult::Error(this->shared_from_this(), "Unknown variable name");
+		}
+
+		context->GetValueStack().push(value);
+
+		return Codegen::CodegenResult::Ok(this->shared_from_this());
 	}
 } // namespace K::AST

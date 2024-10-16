@@ -39,3 +39,9 @@ namespace K::Codegen
 		std::shared_ptr<const AST::BaseExpression> m_Expression;
 	};
 } // namespace K::Codegen
+
+#define CODEGEN_CHECK(result)                                                                                          \
+	if(!result.IsOk())                                                                                                 \
+	{                                                                                                                  \
+		return result;                                                                                                 \
+	}

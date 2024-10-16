@@ -6,10 +6,13 @@
 #include <llvm/IR/Value.h>
 #include <map>
 #include <memory>
+#include <stack>
 #include <string>
 
 namespace K::Codegen
 {
+	using ValueStack = std::stack<llvm::Value*>;
+
 	class CodegenContext
 	{
 	  public:
@@ -18,11 +21,21 @@ namespace K::Codegen
 		std::shared_ptr<llvm::IRBuilder<>> GetBuilder() const { return m_Builder; }
 		std::shared_ptr<llvm::Module> GetModule() const { return m_Module; }
 		llvm::LLVMContext& GetContext() const { return m_Builder->getContext(); }
+		ValueStack& GetValueStack() { return m_ValueStack; }
+		std::map<std::string, llvm::Value*>& GetNamedValues() { return m_NamedValues; }
+
+		llvm::Value* GetPopValue()
+		{
+			auto* value = m_ValueStack.top();
+			m_ValueStack.pop();
+			return value;
+		}
 
 	  private:
 		std::shared_ptr<llvm::IRBuilder<>> m_Builder;
 		std::shared_ptr<llvm::Module> m_Module;
 		std::map<std::string, llvm::Value*> m_NamedValues;
+		ValueStack m_ValueStack;
 	};
 
 	using CodegenContextPtr = std::shared_ptr<CodegenContext>;

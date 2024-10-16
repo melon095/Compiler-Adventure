@@ -41,27 +41,54 @@ namespace K::AST
 
 	Codegen::CodegenResult BinaryExpression::Codegen(Codegen::CodegenContextPtr context) const
 	{
-		return Codegen::CodegenResult::NotImplemented(this->shared_from_this());
-		// auto& builder = context->GetBuilder();
+		auto builder = context->GetBuilder();
 
-		// auto lhs = LHS->Codegen(context);
-		// auto rhs = RHS->Codegen(context);
+		CODEGEN_CHECK(LHS->Codegen(context));
+		CODEGEN_CHECK(RHS->Codegen(context));
 
-		// switch(Op)
-		// {
-		//     case BinaryOperator::Add:
-		//         return builder.CreateFAdd(lhs, rhs, "addtmp");
-		//     case BinaryOperator::Sub:
-		//         return builder.CreateFSub(lhs, rhs, "subtmp");
-		//     case BinaryOperator::Mul:
-		//         return builder.CreateFMul(lhs, rhs, "multmp");
-		//     case BinaryOperator::Div:
-		//         return builder.CreateFDiv(lhs, rhs, "divtmp");
-		//     case BinaryOperator::Less:
-		//         lhs = builder.CreateFCmpULT(lhs, rhs, "cmptmp");
-		//         return builder.CreateUIToFP(lhs, llvm::Type::getDoubleTy(context->GetContext()), "booltmp");
-		//     default:
-		//         throw std::runtime_error("Invalid binary operator");
-		// }
+		auto* lhs = context->GetPopValue();
+		auto* rhs = context->GetPopValue();
+
+		llvm::Value* n = nullptr;
+
+		switch(Op)
+		{
+			case BinaryOperator::Add:
+				{
+					n = builder->CreateFAdd(lhs, rhs, "addtmp");
+				}
+				break;
+
+			case BinaryOperator::Sub:
+				{
+					n = builder->CreateFSub(lhs, rhs, "subtmp");
+				}
+				break;
+
+			case BinaryOperator::Mul:
+				{
+					n = builder->CreateFMul(lhs, rhs, "multmp");
+				}
+				break;
+
+			case BinaryOperator::Div:
+				{
+					n = builder->CreateFDiv(lhs, rhs, "divtmp");
+				}
+				break;
+
+			case BinaryOperator::Less:
+				{
+					n = builder->CreateFCmpULT(lhs, rhs, "cmptmp");
+					n = builder->CreateUIToFP(n, llvm::Type::getDoubleTy(context->GetContext()), "booltmp");
+				}
+				break;
+
+			default: return Codegen::CodegenResult::Error(shared_from_this(), "Invalid binary operator");
+		}
+
+		context->GetValueStack().push(n);
+
+		return Codegen::CodegenResult::Ok(shared_from_this());
 	}
 } // namespace K::AST

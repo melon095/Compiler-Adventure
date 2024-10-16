@@ -1,5 +1,9 @@
 #include <AST/FunctionStatement.hh>
 
+#include <llvm/IR/BasicBlock.h>
+#include <llvm/IR/Value.h>
+#include <llvm/IR/Verifier.h>
+
 namespace K::AST
 {
 	FunctionStatement::FunctionStatement(PrototypeStatementPtr prototype, ExpressionPtr body)
@@ -19,6 +23,46 @@ namespace K::AST
 
 	Codegen::CodegenResult FunctionStatement::Codegen(Codegen::CodegenContextPtr context) const
 	{
-		return Codegen::CodegenResult::NotImplemented(this->shared_from_this());
+		auto Builder = context->GetBuilder();
+		auto& llvmContext = context->GetContext();
+		auto& NamedValues = context->GetNamedValues();
+
+		auto* TheFunction = context->GetModule()->getFunction(Prototype->Name);
+		if(!TheFunction)
+		{
+			CODEGEN_CHECK(Prototype->Codegen(context));
+
+			TheFunction = context->GetModule()->getFunction(Prototype->Name); // TODO: ?
+		}
+
+		if(!TheFunction)
+		{
+			return Codegen::CodegenResult::Error(this->shared_from_this(), "Failed to create function");
+		}
+
+		auto* BB = llvm::BasicBlock::Create(llvmContext, "entry", TheFunction);
+		Builder->SetInsertPoint(BB);
+
+		NamedValues.clear();
+		for(auto& Arg : TheFunction->args())
+		{
+			NamedValues[std::string(Arg.getName())] = &Arg;
+		}
+
+		CODEGEN_CHECK(Body->Codegen(context));
+		auto retval = context->GetPopValue();
+
+		if(retval)
+		{
+			Builder->CreateRet(retval);
+
+			llvm::verifyFunction(*TheFunction);
+
+			return Codegen::CodegenResult::Ok(this->shared_from_this());
+		}
+
+		TheFunction->eraseFromParent();
+
+		return Codegen::CodegenResult::Error(this->shared_from_this(), "Failed to generate function body");
 	}
 } // namespace K::AST

@@ -101,6 +101,9 @@ int main()
 	if(result.IsOk())
 	{
 		std::cout << "Codegen successful" << std::endl;
+
+		auto* mainFunction = module->getFunction("main");
+		module->print(llvm::outs(), nullptr);
 	}
 	else
 	{

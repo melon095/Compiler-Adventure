@@ -9,8 +9,8 @@ namespace K::Codegen
 	}
 
 	CodegenResult::CodegenResult(std::shared_ptr<const AST::BaseExpression> expr, const std::string& message)
-		: m_Expression(expr)
-		, m_ErrorMessage(message)
+		: m_ErrorMessage(message)
+		, m_Expression(expr)
 	{
 	}
 

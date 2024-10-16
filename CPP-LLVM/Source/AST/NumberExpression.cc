@@ -15,6 +15,9 @@ namespace K::AST
 
 	Codegen::CodegenResult NumberExpression::Codegen(Codegen::CodegenContextPtr context) const
 	{
-		return Codegen::CodegenResult::NotImplemented(this->shared_from_this());
+		auto* value = llvm::ConstantFP::get(context->GetContext(), llvm::APFloat(Value));
+		context->GetValueStack().push(value);
+
+		return Codegen::CodegenResult::Ok(this->shared_from_this());
 	}
 } // namespace K::AST
