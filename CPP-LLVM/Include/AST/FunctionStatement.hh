@@ -15,6 +15,8 @@ namespace K::AST
 		void Dump(int indent, std::ostream& os) const override;
 		Codegen::CodegenResult Codegen(Codegen::CodegenContextPtr context) const override;
 
+		const std::string& GetName() const { return Prototype->Name; }
+
 	  public:
 		PrototypeStatementPtr Prototype;
 		ExpressionPtr Body;

@@ -17,7 +17,12 @@ namespace K::AST
 		Codegen::CodegenResult Codegen(Codegen::CodegenContextPtr context) const override;
 
 	  private:
+		Codegen::CodegenResult LocateAndMakeEntrypoint(Codegen::CodegenContextPtr context) const;
+		Codegen::CodegenResult CreateAdHocMain(Codegen::CodegenContextPtr context) const;
+
+	  private:
 		std::vector<ExpressionPtr> m_Expressions;
+        ExpressionPtr m_SupposedMain;
 	};
 
 	SMARTPTR(Program)

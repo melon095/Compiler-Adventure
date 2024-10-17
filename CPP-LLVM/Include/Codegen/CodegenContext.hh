@@ -16,10 +16,11 @@ namespace K::Codegen
 	class CodegenContext
 	{
 	  public:
-		CodegenContext(std::shared_ptr<llvm::LLVMContext> context, std::shared_ptr<llvm::Module> module);
+		CodegenContext(std::shared_ptr<llvm::LLVMContext> context, llvm::Module* module);
+		// No destructor, let m_Module be leaky.
 
 		std::shared_ptr<llvm::IRBuilder<>> GetBuilder() const { return m_Builder; }
-		std::shared_ptr<llvm::Module> GetModule() const { return m_Module; }
+		llvm::Module* GetModule() const { return m_Module; }
 		llvm::LLVMContext& GetContext() const { return m_Builder->getContext(); }
 		ValueStack& GetValueStack() { return m_ValueStack; }
 		std::map<std::string, llvm::Value*>& GetNamedValues() { return m_NamedValues; }
@@ -33,7 +34,7 @@ namespace K::Codegen
 
 	  private:
 		std::shared_ptr<llvm::IRBuilder<>> m_Builder;
-		std::shared_ptr<llvm::Module> m_Module;
+		llvm::Module* m_Module;
 		std::map<std::string, llvm::Value*> m_NamedValues;
 		ValueStack m_ValueStack;
 	};

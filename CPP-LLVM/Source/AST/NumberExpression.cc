@@ -18,6 +18,6 @@ namespace K::AST
 		auto* value = llvm::ConstantFP::get(context->GetContext(), llvm::APFloat(Value));
 		context->GetValueStack().push(value);
 
-		return Codegen::CodegenResult::Ok(this->shared_from_this());
+		return Codegen::CodegenResult::Ok(this->shared_from_this(), value);
 	}
 } // namespace K::AST

@@ -43,11 +43,8 @@ namespace K::AST
 	{
 		auto builder = context->GetBuilder();
 
-		CODEGEN_CHECK(LHS->Codegen(context));
-		CODEGEN_CHECK(RHS->Codegen(context));
-
-		auto* lhs = context->GetPopValue();
-		auto* rhs = context->GetPopValue();
+		auto* lhs = CODEGEN_CHECK(LHS->Codegen(context));
+		auto* rhs = CODEGEN_CHECK(RHS->Codegen(context));
 
 		llvm::Value* n = nullptr;
 
@@ -89,6 +86,6 @@ namespace K::AST
 
 		context->GetValueStack().push(n);
 
-		return Codegen::CodegenResult::Ok(shared_from_this());
+		return Codegen::CodegenResult::Ok(shared_from_this(), n);
 	}
 } // namespace K::AST

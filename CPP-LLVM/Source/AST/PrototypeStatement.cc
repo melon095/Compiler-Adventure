@@ -25,7 +25,7 @@ namespace K::AST
 
 	Codegen::CodegenResult PrototypeStatement::Codegen(Codegen::CodegenContextPtr context) const
 	{
-		auto module = context->GetModule();
+		auto* module = context->GetModule();
 		auto& llvmContext = context->GetContext();
 
 		auto* function = module->getFunction(Name);
@@ -36,7 +36,7 @@ namespace K::AST
 
 		std::vector<llvm::Type*> doubles(Args.size(), llvm::Type::getDoubleTy(llvmContext));
 		auto* ft = llvm::FunctionType::get(llvm::Type::getDoubleTy(llvmContext), doubles, false);
-		auto* f = llvm::Function::Create(ft, llvm::Function::ExternalLinkage, Name, module.get());
+		auto* f = llvm::Function::Create(ft, llvm::Function::ExternalLinkage, Name, module);
 
 		if(f->getName() != Name)
 		{
@@ -50,6 +50,6 @@ namespace K::AST
 			arg.setName(Args[idx++]);
 		}
 
-		return Codegen::CodegenResult::Ok(this->shared_from_this());
+		return Codegen::CodegenResult::Ok(this->shared_from_this(), f);
 	}
 } // namespace K::AST

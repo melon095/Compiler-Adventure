@@ -21,29 +21,32 @@ namespace K::AST
 
 	Codegen::CodegenResult CallExpression::Codegen(Codegen::CodegenContextPtr context) const
 	{
-		return Codegen::CodegenResult::NotImplemented(this->shared_from_this());
+		auto Builder = context->GetBuilder();
+		auto& NamedValues = context->GetNamedValues();
 
-		// auto &builder = context->GetBuilder();
-		// auto &module = context->GetModule();
+		auto* CalleeF = context->GetModule()->getFunction(Callee);
+		if(!CalleeF)
+		{
+			return Codegen::CodegenResult::Error(this->shared_from_this(), "Unknown function referenced");
+		}
 
-		// auto callee = module->getFunction(Callee);
-		// if (!callee)
-		// {
-		//     throw std::runtime_error("Unknown function referenced");
-		// }
+		if(CalleeF->arg_size() != Args.size())
+		{
+			return Codegen::CodegenResult::Error(this->shared_from_this(), "Incorrect number of arguments passed");
+		}
 
-		// if (callee->arg_size() != Args.size())
-		// {
-		//     throw std::runtime_error("Incorrect number of arguments passed");
-		// }
+		std::vector<llvm::Value*> ArgsV;
+		for(const auto& arg : Args)
+		{
+			auto ret = arg->Codegen(context);
+			if(!ret.IsOk())
+			{
+				return ret;
+			}
 
-		// std::vector<llvm::Value *> args;
-		// for (const auto &arg : Args)
-		// {
-		//     arg->Codegen(context);
-		//     args.push_back(context->GetBuilder().GetInsertBlock());
-		// }
+			ArgsV.push_back(ret.GetValue());
+		}
 
-		// context->GetBuilder().CreateCall(callee, args, "calltmp");
+		return Codegen::CodegenResult::Ok(this->shared_from_this(), Builder->CreateCall(CalleeF, ArgsV));
 	}
 } // namespace K::AST

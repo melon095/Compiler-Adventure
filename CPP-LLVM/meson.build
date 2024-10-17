@@ -33,8 +33,9 @@ magic_enum_dep = magic_enum_sp.get_variable('magic_enum_dep')
 executable('LLVM-Test', sources,
   install : true,
   dependencies : [llvm_dep, magic_enum_dep],
-  include_directories : include_directories('Include'))
-
-
-
+  include_directories : include_directories('Include'),
+   cpp_args: [
+    '-Wno-gnu-statement-expression'
+    ]
+)
 

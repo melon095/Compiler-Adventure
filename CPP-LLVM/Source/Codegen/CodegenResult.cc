@@ -3,18 +3,17 @@
 
 namespace K::Codegen
 {
-	CodegenResult::CodegenResult(std::shared_ptr<const AST::BaseExpression> expr)
+	CodegenResult::CodegenResult(std::shared_ptr<const AST::BaseExpression> expr, llvm::Value* value)
 		: m_Expression(expr)
+		, m_Variant(value)
 	{
 	}
 
 	CodegenResult::CodegenResult(std::shared_ptr<const AST::BaseExpression> expr, const std::string& message)
-		: m_ErrorMessage(message)
-		, m_Expression(expr)
+		: m_Expression(expr)
+		, m_Variant(message)
 	{
 	}
-
-	bool CodegenResult::IsOk() const { return m_ErrorMessage.empty(); }
 
 	void CodegenResult::Dump(int indent, std::ostream& os) const
 	{
@@ -22,7 +21,7 @@ namespace K::Codegen
 
 		if(!IsOk())
 		{
-			os << std::string(indent + 2, ' ') << m_ErrorMessage << std::endl;
+			os << std::string(indent + 2, ' ') << "Error: " << GetErrorMessage() << std::endl;
 		}
 
 		if(m_Expression)

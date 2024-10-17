@@ -1,8 +1,10 @@
 #include <AST/AST.hh>
+#include <Lexer/Tokens.hh>
 #include <Parser/Diagnostician.hh>
 #include <Parser/Parser.hh>
 #include <PtrUtils.hh>
 
+#include <format>
 #include <iostream>
 
 namespace K
@@ -38,6 +40,10 @@ namespace K
 		Consume(TokenID::LParen, "Expected '('");
 
 		auto expr = ParseExpression();
+		if(!expr)
+		{
+			return nullptr;
+		}
 
 		Consume(TokenID::RParen, "Expected ')'");
 
@@ -76,6 +82,7 @@ namespace K
 
 				if(CheckToken(TokenID::RParen))
 				{
+					AdvanceToken(); // )
 					break;
 				}
 
@@ -95,7 +102,11 @@ namespace K
 			case TokenID::Identifier: return ParseIdentifierExpression();
 			case TokenID::Number: return ParseNumberExpression();
 			case TokenID::LParen: return ParseParenExpression();
-			default: throw std::runtime_error("Expected primary expression");
+			default:
+				auto error = std::format("Unknown token when expecting an expression: {}", token);
+
+				m_Diagnostician->Report("Parser", error, token.Line, token.Column);
+				throw std::runtime_error(error);
 		}
 	}
 
@@ -131,12 +142,20 @@ namespace K
 			AdvanceToken();
 
 			auto rhs = ParsePrimary();
+			if(!rhs)
+			{
+				return nullptr;
+			}
 
 			auto nextPrec = GetPrecedence(GetToken().Id);
 
 			if(tokenPrec < nextPrec)
 			{
 				rhs = ParseBinOpRHS(tokenPrec + 1, std::move(rhs));
+				if(!rhs)
+				{
+					return nullptr;
+				}
 			}
 
 			lhs = CreateASTNode<AST::BinaryExpression>(token.Id, std::move(lhs), std::move(rhs));
@@ -204,13 +223,14 @@ namespace K
 	AST::ExpressionPtr Parser::ParseTopLevelExpression()
 	{
 		auto expr = ParseExpression();
-		if(expr)
+		if(!expr)
 		{
-			auto prototype = CreateASTNode<AST::PrototypeStatement>("", std::vector<std::string>());
-			return CreateASTNode<AST::FunctionStatement>(std::move(prototype), std::move(expr));
+			return nullptr;
 		}
 
-		return nullptr;
+		auto prototype = CreateASTNode<AST::PrototypeStatement>("", std::vector<std::string>());
+
+		return CreateASTNode<AST::FunctionStatement>(std::move(prototype), std::move(expr));
 	}
 
 	bool Parser::CheckToken(TokenID token) const { return GetToken().Id == token; }

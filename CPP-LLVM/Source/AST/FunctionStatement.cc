@@ -49,20 +49,24 @@ namespace K::AST
 			NamedValues[std::string(Arg.getName())] = &Arg;
 		}
 
-		CODEGEN_CHECK(Body->Codegen(context));
-		auto retval = context->GetPopValue();
+		auto ret = Body->Codegen(context);
+		if(!ret.IsOk())
+			goto c_error;
 
-		if(retval)
 		{
+			auto* retval = ret.GetValue();
 			Builder->CreateRet(retval);
 
 			llvm::verifyFunction(*TheFunction);
 
-			return Codegen::CodegenResult::Ok(this->shared_from_this());
+			return Codegen::CodegenResult::Ok(this->shared_from_this(), TheFunction);
 		}
 
-		TheFunction->eraseFromParent();
+	c_error:
+		{
+			TheFunction->eraseFromParent();
 
-		return Codegen::CodegenResult::Error(this->shared_from_this(), "Failed to generate function body");
+			return Codegen::CodegenResult::Error(this->shared_from_this(), "Failed to generate function body");
+		}
 	}
 } // namespace K::AST

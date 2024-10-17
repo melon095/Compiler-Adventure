@@ -26,6 +26,6 @@ namespace K::AST
 
 		context->GetValueStack().push(value);
 
-		return Codegen::CodegenResult::Ok(this->shared_from_this());
+		return Codegen::CodegenResult::Ok(this->shared_from_this(), value);
 	}
 } // namespace K::AST
