@@ -1,0 +1,48 @@
+// Variable Declaration
+@x = 10
+
+// Function Declaration
+fun(a, b) -> a + (b * b) -> @Function
+
+// Execute @Function with 5 and 15 as arguments. Save the result in @result
+5 15 @Function <-> -> @result
+
+// Eexecute @print with @result as argument
+@result @print <->
+
+// Basic Arithmetic
+5 2 + -> @print
+
+// Loop through the list
+@list = [1, 2, 3, 4, 5]
+^ @list each 
+    @print
+    
+// Conditional
+5 > 10 ?
+    -> "This expression is true" 
+    -> "This expression is false"
+    // Pipe into function and save result
+    // @MyProcessingFunction <-> -> @evaluatedResult 
+
+    // Print the result
+    // @Print <->
+
+// Large Functions
+fun(a) -> {
+    n > 0 ?
+        -> "Positive"
+        -> "Negative"
+    -> @result
+
+    @result @print <->
+
+    @result
+} -> @CheckSign
+
+// Execute @CheckSign with 5 as argument
+5 @CheckSign <-> 
+    == "Positive" ?
+        -> "This is a positive number"
+        -> "This is a negative number"
+    @Print <->

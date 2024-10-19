@@ -45,6 +45,13 @@ using namespace std::literals;
 //     return 0;
 // }
 
+extern "C" double printd(double x)
+{
+	std::cout << std::format("[printd] {}", x) << std::endl;
+
+	return x;
+}
+
 int main()
 {
 	llvm::InitializeNativeTarget();
@@ -70,11 +77,12 @@ int main()
 						"def foo(a, b) a*a + 2*a*b + b*b * square_5(a)\n"
 						"\n"
 						"def main()\n"
-						"   foo(5, 2)\n"
+						"   printd(foo(5, 2) * sin(1))\n"
 						"\n"
 						"extern sin(arg)\n"
 						"extern cos(arg)\n"
-						"extern atan2(arg1, arg2)\n";
+						"extern atan2(arg1, arg2)\n"
+						"extern printd(arg)\n";
 
 	std::cout << "Input: " << INPUT << std::endl;
 
