@@ -21,7 +21,10 @@ namespace Glyph
 	V(IdentifierNode)                                                                                                  \
 	V(LiteralNode)                                                                                                     \
 	V(OperatorNode)                                                                                                    \
-	V(BlockNode)
+	V(BlockNode)                                                                                                       \
+	V(ConditionalNode)                                                                                                 \
+	V(LoopNode)                                                                                                        \
+	V(ExpressionStatementNode)
 
 #define DECLARE_ENUM_TYPE(name) name,
 	enum class NodeType
@@ -71,6 +74,17 @@ namespace Glyph
 		StatementNode(NodeType type);
 	};
 
+	class ExpressionStatementNode : public StatementNode
+	{
+	  public:
+		ExpressionStatementNode(ExpressionNodePtr expression);
+
+		const ExpressionNodePtr& GetExpression() const;
+
+	  private:
+		ExpressionNodePtr m_expression;
+	};
+
 	class ProgramNode : public AstNode
 	{
 	  public:
@@ -78,6 +92,7 @@ namespace Glyph
 		ProgramNode(const std::vector<StatementNodePtr>& statements);
 
 		void AddStatement(StatementNodePtr statement);
+		std::vector<StatementNodePtr>& GetStatements();
 
 	  private:
 		std::vector<StatementNodePtr> m_statements;
@@ -90,6 +105,7 @@ namespace Glyph
 		BlockNode(const std::vector<StatementNodePtr>& statements);
 
 		void AddStatement(StatementNodePtr statement);
+		std::vector<StatementNodePtr>& GetStatements();
 
 	  private:
 		std::vector<StatementNodePtr> m_statements;
@@ -99,6 +115,8 @@ namespace Glyph
 	{
 	  public:
 		IdentifierNode(const std::string& name);
+
+		const std::string& GetName() const;
 
 	  private:
 		std::string m_name;
@@ -117,60 +135,87 @@ namespace Glyph
 		};
 	};
 
-	class VariableDeclarationNode : public StatementNode
+	class VariableDeclarationNode : public ExpressionNode
 	{
 	  public:
 		VariableDeclarationNode(IdentifierNodePtr identifier, ExpressionNodePtr expression);
+
+		const IdentifierNodePtr& GetIdentifier() const;
+		const ExpressionNodePtr& GetExpression() const;
 
 	  private:
 		IdentifierNodePtr m_identifier;
 		ExpressionNodePtr m_expression;
 	};
 
-	class AssignmentNode : public StatementNode
+	class AssignmentNode : public ExpressionNode
 	{
 	  public:
-		AssignmentNode(const std::string& name, ExpressionNodePtr expression);
+		AssignmentNode(IdentifierNodePtr name, ExpressionNodePtr expression);
+
+		const IdentifierNodePtr& GetName() const;
+		const ExpressionNodePtr& GetExpression() const;
 
 	  private:
-		std::string m_name;
+		IdentifierNodePtr m_name;
 		ExpressionNodePtr m_expression;
 	};
 
 	class UnaryExpressionNode : public ExpressionNode
 	{
 	  public:
+		enum class Type
+		{
+			Neg,
+			Not
+		};
+
 		UnaryExpressionNode(const std::string& op, ExpressionNodePtr expression);
 
+		Type GetOp() const;
+		const ExpressionNodePtr& GetExpression() const;
+
 	  private:
-		std::string m_op;
+		static Type GetOperatorType(const std::string& op);
+
+	  private:
+		Type m_op;
 		ExpressionNodePtr m_expression;
 	};
 
 	class PrototypeNode : public AstNode
 	{
 	  public:
-		PrototypeNode(const std::string& name, const std::vector<std::string>& args);
+		PrototypeNode(IdentifierNodePtr name, const std::vector<std::string>& args);
+
+		const IdentifierNodePtr& GetName() const;
+		const std::vector<std::string>& GetArgs() const;
 
 	  private:
-		std::string m_name;
+		IdentifierNodePtr m_name;
 		std::vector<std::string> m_args;
 	};
 
 	class FunctionDeclarationNode : public StatementNode
 	{
 	  public:
-		FunctionDeclarationNode(PrototypeNodePtr prototype, ExpressionNodePtr body);
+		FunctionDeclarationNode(PrototypeNodePtr prototype, BlockNodePtr body);
+
+		const PrototypeNodePtr& GetPrototype() const;
+		const BlockNodePtr& GetBody() const;
 
 	  private:
 		PrototypeNodePtr m_prototype;
-		ExpressionNodePtr m_body;
+		BlockNodePtr m_body;
 	};
 
 	class FunctionCallNode : public ExpressionNode
 	{
 	  public:
 		FunctionCallNode(const IdentifierNodePtr name, const std::vector<ExpressionNodePtr>& args);
+
+		const IdentifierNodePtr& GetName() const;
+		const std::vector<ExpressionNodePtr>& GetArgs() const;
 
 	  private:
 		IdentifierNodePtr m_name;
@@ -190,6 +235,8 @@ namespace Glyph
 	  public:
 		OperatorNode(const std::string& op);
 
+		Type GetOp() const;
+
 	  private:
 		static Type GetOperatorType(const std::string& op);
 
@@ -203,9 +250,41 @@ namespace Glyph
 		BinaryExpressionNode(ExpressionNodePtr lhs, OperatorNodePtr op, ExpressionNodePtr rhs);
 		BinaryExpressionNode(ExpressionNodePtr lhs, const std::string& op, ExpressionNodePtr rhs);
 
+		const ExpressionNodePtr& GetLhs() const;
+		const ExpressionNodePtr& GetRhs() const;
+		const OperatorNodePtr& GetOp() const;
+
 	  private:
 		ExpressionNodePtr m_lhs;
 		ExpressionNodePtr m_rhs;
 		OperatorNodePtr m_op;
+	};
+
+	class ConditionalNode : public StatementNode
+	{
+	  public:
+		ConditionalNode(ExpressionNodePtr condition, ExpressionNodePtr trueBranch, ExpressionNodePtr falseBranch);
+
+		const ExpressionNodePtr& GetCondition() const;
+		const ExpressionNodePtr& GetTrueBranch() const;
+		const ExpressionNodePtr& GetFalseBranch() const;
+
+	  private:
+		ExpressionNodePtr m_condition;
+		ExpressionNodePtr m_trueBranch;
+		ExpressionNodePtr m_falseBranch;
+	};
+
+	class LoopNode : public StatementNode
+	{
+	  public:
+		LoopNode(ExpressionNodePtr condition, ExpressionNodePtr body);
+
+		const ExpressionNodePtr& GetCondition() const;
+		const ExpressionNodePtr& GetBody() const;
+
+	  private:
+		ExpressionNodePtr m_condition;
+		ExpressionNodePtr m_body;
 	};
 } // namespace Glyph

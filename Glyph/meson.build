@@ -10,6 +10,11 @@ cxx = meson.get_compiler('cpp')
 sources = [
     'Source/Program.cc',
     'Source/AST/AST.cc',
+    'Source/Visitors/IASTVisitor.cc',
+    'Source/Visitors/ASTPrinterVisitor.cc',
+    'Source/Lexer/Lexer.cc',
+    'Source/Lexer/Token.cc',
+    'Source/Parser/Parser.cc',
 ]
 
 # llvm_dep = cxx.find_library('LLVM', required: true)

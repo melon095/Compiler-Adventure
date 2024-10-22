@@ -1,33 +1,36 @@
 grammar Glyph;
 
-// Parser
+// Parser rules
 
-program: statement+ EOF;
+program
+    : statement+ EOF
+    ;
 
 statement
-    : variableDeclaration
-    | assignment
-    | functionDefinition
-    | functionCall
+    : functionDefinition
+    | expressionStatement
     | conditional
     | loop
-    | expression
+    ;
+
+expressionStatement
+    : expression SEMICOLON
     ;
 
 variableDeclaration
     : '@' Identifier '->' expression SEMICOLON
     ;
 
-assignment
-    : Identifier '->' expression SEMICOLON
-    ;
-
 functionDefinition
-    : 'fun' Identifier '(' parameters? ')' '->' block SEMICOLON
+    : 'fun' Identifier '(' parameters? ')' '->' block
     ;
 
 functionCall
-    : expression (expression)* Identifier '<->' '->'? Identifier?
+    : expression* '@' Identifier '<->'
+    ;
+
+argumentList
+    : expression (',' expression)*
     ;
 
 conditional
@@ -40,24 +43,40 @@ loop
 
 block
     : '{' statement* '}'
-    | statement
     ;
 
 parameters
     : Identifier (',' Identifier)*
     ;
 
+// Expression rules
+
 expression
-    : '(' expression ')'
+    : assignment
     | binaryOperation
-    | functionCall
-    | Number
-    | Identifier
-    | String
+    | unaryOperation
+    | primary
+    ;
+
+assignment
+    : Identifier '->' expression
     ;
 
 binaryOperation
     : expression operator expression
+    ;
+
+unaryOperation
+    : operator expression
+    ;
+
+primary
+    : '(' expression ')'        // Parenthesized expression
+    | functionCall              // Function call
+    | variableDeclaration       // Variable declaration  
+    | Identifier                // Variable reference
+    | Number                    // Number literal
+    | String                    // String literal
     ;
 
 operator
