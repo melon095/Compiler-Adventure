@@ -83,7 +83,8 @@
         "bitset": "cpp",
         "regex": "cpp",
         "fstream": "cpp",
-        "future": "cpp"
+        "future": "cpp",
+        "csignal": "cpp"
     },
     
 }

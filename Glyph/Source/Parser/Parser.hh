@@ -2,6 +2,7 @@
 
 #include <AST/AST.hh>
 #include <Lexer/Token.hh>
+#include <Parser/Diagnostics.hh>
 
 namespace Glyph
 {
@@ -12,34 +13,36 @@ namespace Glyph
 
 		ProgramNodePtr ParseProgram();
 
-	  private:
-		StatementNodePtr Statement();
-		StatementNodePtr FunctionDefinition();
-		StatementNodePtr ExpressionStatement();
-		StatementNodePtr Conditional();
-		StatementNodePtr Loop();
-
-		ExpressionNodePtr Expression();
-		ExpressionNodePtr Literal();
-		ExpressionNodePtr Assignment();
-		ExpressionNodePtr BinaryOperation();
-		ExpressionNodePtr UnaryOperation();
-
-		ExpressionNodePtr Primary();
-		ExpressionNodePtr VariableDeclaration();
-		ExpressionNodePtr FunctionCall();
-
-		PrototypeNodePtr Prototype();
-		BlockNodePtr Block();
-		IdentifierNodePtr Identifier();
+		const Diagnostics& GetDiagnostics() const { return m_Diagnostics; }
 
 	  private:
+		StatementNodePtr ParseStatement();
+		StatementNodePtr ParseLet();
+		StatementNodePtr ParseReturn();
+		StatementNodePtr ParseExpressionStatement();
+		ExpressionNodePtr ParseExpression();
+		FunctionDeclarationNodePtr ParseFunction(IdentifierNodePtr identifier);
+		ExpressionNodePtr ParsePrimary();
+		ExpressionNodePtr ParseBinary(ExpressionNodePtr lhs, int precedence);
+		FunctionCallNodePtr ParseCall(IdentifierNodePtr callee);
+		MatchExpressionNodePtr ParseMatch();
+		IfExpressionNodePtr ParseIf();
+		BlockNodePtr ParseBlock();
+		IdentifierNodePtr ParseIdentifier();
+		LiteralNodePtr ParseLiteral();
+
+		PrototypeNodePtr ParsePrototype(IdentifierNodePtr name);
+
+	  private:
+		int GetPrecedence(Token::ID token) const;
 		bool CheckToken(Token::ID token) const;
 		Token PeekToken() const;
 		Token AdvanceToken();
 		Token GetToken() const;
 		Token Consume(Token::ID token, const std::string& message = "");
 		bool IsAtEnd() const;
+
+		void ReportError(const std::string& message);
 
 		template<typename TClass, typename... TArgs>
 		std::shared_ptr<TClass> CreateASTNode(TArgs&&... args) requires std::derived_from<TClass, AstNode>
@@ -54,6 +57,7 @@ namespace Glyph
 		}
 
 	  private:
+		Diagnostics m_Diagnostics;
 		Tokens m_Tokens;
 		std::size_t m_Current;
 	};

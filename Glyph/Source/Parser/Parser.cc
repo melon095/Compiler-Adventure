@@ -1,9 +1,16 @@
+#include <Lexer/Token.hh>
 #include <Parser/Parser.hh>
+
+#include <format>
+#include <iostream>
+
+#include <magic_enum.hpp>
 
 namespace Glyph
 {
 	Parser::Parser(Tokens tokens)
-		: m_Tokens(tokens)
+		: m_Diagnostics()
+		, m_Tokens(tokens)
 		, m_Current(0)
 	{
 	}
@@ -12,232 +19,331 @@ namespace Glyph
 	{
 		auto program = ProgramNodePtr(new ProgramNode());
 
-		while(!IsAtEnd())
+		try
 		{
-			program->AddStatement(Statement());
+			while(!IsAtEnd())
+			{
+				program->AddStatement(ParseStatement());
+			}
+		}
+		catch(const std::exception& e)
+		{
+			(void)e;
 		}
 
 		return program;
 	}
 
-	StatementNodePtr Parser::Statement()
+	StatementNodePtr Parser::ParseStatement()
 	{
-		if(CheckToken(Token::ID::Func))
+		if(CheckToken(Token::ID::Let))
 		{
-			return FunctionDefinition();
+			return ParseLet();
 		}
-		else if(CheckToken(Token::ID::Identifier))
+
+		if(CheckToken(Token::ID::Return))
 		{
-			return ExpressionStatement();
+			return ParseReturn();
 		}
-		else if(CheckToken(Token::ID::Caret))
-		{
-			return Loop();
-		}
-		else if(CheckToken(Token::ID::LBrace))
-		{
-			return Block();
-		}
-		else
-		{
-			return ExpressionStatement();
-		}
+
+		return ParseExpressionStatement();
 	}
 
-	// 'fun' Identifier '(' parameters? ')' '->' block
-	StatementNodePtr Parser::FunctionDefinition()
+	StatementNodePtr Parser::ParseLet()
 	{
-		auto token = Consume(Token::ID::Func, "Expected 'fun' keyword");
+		Consume(Token::ID::Let);
 
-		auto prototype = Prototype();
+		auto identifier = ParseIdentifier();
+		Consume(Token::ID::Equal, "Expected '=' after identifier");
 
-		Consume(Token::ID::Arrow, "Expected '->' token");
+		// TODO: Function declaration should not be determined within the ParseLet function.
+		if(CheckToken(Token::ID::LeftParen))
+		{
+			auto func = ParseFunction(identifier);
 
-		auto block = Block();
+			Consume(Token::ID::Semicolon, "Expected ';' after function declaration");
+
+			return func;
+		}
+
+		auto expression = ParseExpression();
+		Consume(Token::ID::Semicolon, "Expected ';' after expression");
+
+		return CreateASTNode<LetDeclarationNode>(identifier, expression);
+	}
+
+	FunctionDeclarationNodePtr Parser::ParseFunction(IdentifierNodePtr identifier)
+	{
+		auto prototype = ParsePrototype(identifier);
+		Consume(Token::ID::Arrow, "Expected '->' after function arguments");
+
+		auto block = ParseBlock();
 
 		return CreateASTNode<FunctionDeclarationNode>(prototype, block);
 	}
 
-	// expression SEMICOLON
-	StatementNodePtr Parser::ExpressionStatement()
+	StatementNodePtr Parser::ParseReturn()
 	{
-		auto expression = Expression();
+		Consume(Token::ID::Return);
 
-		Consume(Token::ID::Semicolon, "Expected ';' token");
+		auto expression = ParseExpression();
+		Consume(Token::ID::Semicolon, "Expected ';' after expression");
+
+		return CreateASTNode<ReturnStatementNode>(expression);
+	}
+
+	StatementNodePtr Parser::ParseExpressionStatement()
+	{
+		auto expression = ParseExpression();
+		Consume(Token::ID::Semicolon, "Expected ';' after expression");
 
 		return CreateASTNode<ExpressionStatementNode>(expression);
 	}
 
-	// expression '?' '->' expression ('->' expression)?
-	StatementNodePtr Parser::Conditional() { throw std::runtime_error("Not implemented"); }
-
-	// '^' expression block
-	StatementNodePtr Parser::Loop() { throw std::runtime_error("Not implemented"); }
-
-	// expression
-	ExpressionNodePtr Parser::Expression() { return Assignment(); }
-
-	// Identifier '->' expression
-	ExpressionNodePtr Parser::Assignment()
+	ExpressionNodePtr Parser::ParseExpression()
 	{
-		if(CheckToken(Token::ID::At))
-		{
-			return VariableDeclaration();
-		}
+		auto lhs = ParsePrimary();
+		if(!lhs)
+			return nullptr;
 
-		return BinaryOperation();
+		return ParseBinary(lhs, 0);
 	}
 
-	// expression operator expression
-	ExpressionNodePtr Parser::BinaryOperation()
+	ExpressionNodePtr Parser::ParsePrimary()
 	{
-		auto left = UnaryOperation();
-
-		while(CheckToken(Token::ID::Plus) || CheckToken(Token::ID::Minus) || CheckToken(Token::ID::Star)
-			  || CheckToken(Token::ID::Slash) || CheckToken(Token::ID::Less) || CheckToken(Token::ID::Greater)
-			  || CheckToken(Token::ID::Equal) || CheckToken(Token::ID::NotEqual) || CheckToken(Token::ID::LessEqual)
-			  || CheckToken(Token::ID::GreaterEqual))
+		if(CheckToken(Token::ID::Identifier))
 		{
-			auto token = AdvanceToken();
+			auto id = ParseIdentifier();
 
-			auto right = UnaryOperation();
+			if(CheckToken(Token::ID::LeftParen))
+			{
+				return ParseCall(id);
+			}
 
-			left = CreateASTNode<BinaryExpressionNode>(left, token.GetLexeme(), right);
+			return id;
 		}
 
-		return left;
+		if(CheckToken(Token::ID::Number) || CheckToken(Token::ID::True) || CheckToken(Token::ID::False))
+		{
+			return ParseLiteral();
+		}
+
+		if(CheckToken(Token::ID::Match))
+		{
+			return ParseMatch();
+		}
+
+		if(CheckToken(Token::ID::If))
+		{
+			return ParseIf();
+		}
+
+		if(CheckToken(Token::ID::LeftBrace))
+		{
+			return ParseBlock();
+		}
+
+		ReportError("Primary - Unexpected token");
+
+		return nullptr;
 	}
 
-	// operator expression
-	ExpressionNodePtr Parser::UnaryOperation()
+	ExpressionNodePtr Parser::ParseBinary(ExpressionNodePtr lhs, int precedence)
 	{
-		if(CheckToken(Token::ID::Plus) || CheckToken(Token::ID::Minus))
+		while(true)
 		{
-			auto token = AdvanceToken();
+			auto token = PeekToken();
 
-			auto expression = UnaryOperation();
+			if(GetPrecedence(token.GetID()) <= precedence)
+			{
+				return (lhs);
+			}
 
-			return CreateASTNode<UnaryExpressionNode>(token.GetLexeme(), expression);
-		}
-
-		return Primary();
-	}
-
-	// primary
-	ExpressionNodePtr Parser::Primary()
-	{
-		if(CheckToken(Token::ID::Number))
-		{
-			return Literal();
-		}
-		else if(CheckToken(Token::ID::Identifier))
-		{
-			return FunctionCall();
-		}
-		else if(CheckToken(Token::ID::LParen))
-		{
 			AdvanceToken();
 
-			auto expression = Expression();
+			auto op = CreateASTNode<OperatorNode>(token.GetLexeme());
+			auto rhs = ParsePrimary();
 
-			Consume(Token::ID::RParen, "Expected ')' token");
-
-			return expression;
-		}
-
-		throw std::runtime_error("Expected primary expression");
-	}
-
-	// '@' Identifier '->' expression SEMICOLON
-	ExpressionNodePtr Parser::VariableDeclaration()
-	{
-		auto token = Consume(Token::ID::At, "Expected '@' token");
-
-		auto identifier = Identifier();
-
-		Consume(Token::ID::Arrow, "Expected '->' token");
-
-		auto expression = Expression();
-
-		Consume(Token::ID::Semicolon, "Expected ';' token");
-
-		return CreateASTNode<VariableDeclarationNode>(identifier, expression);
-	}
-
-	// Identifier '(' arguments? ')'
-	ExpressionNodePtr Parser::FunctionCall()
-	{
-		auto identifier = Identifier();
-
-		Consume(Token::ID::LParen, "Expected '(' token");
-
-		auto arguments = std::vector<ExpressionNodePtr>();
-
-		if(!CheckToken(Token::ID::RParen))
-		{
-			do
+			while(true)
 			{
-				arguments.push_back(Expression());
-			} while(CheckToken(Token::ID::Comma));
+				auto nextToken = PeekToken();
+
+				if(GetPrecedence(nextToken.GetID()) > GetPrecedence(token.GetID()))
+				{
+					rhs = ParseBinary(rhs, GetPrecedence(nextToken.GetID()));
+				}
+				else
+				{
+					break;
+				}
+			}
+
+			lhs = CreateASTNode<ArithmeticExpressionNode>(lhs, op, rhs);
 		}
 
-		Consume(Token::ID::RParen, "Expected ')' token");
-
-		return CreateASTNode<FunctionCallNode>(identifier, arguments);
+		return nullptr;
 	}
 
-	ExpressionNodePtr Parser::Literal()
+	FunctionCallNodePtr Parser::ParseCall(IdentifierNodePtr callee)
 	{
-		auto token = Consume(Token::ID::Number, "Expected number");
+		Consume(Token::ID::LeftParen);
 
-		return CreateASTNode<LiteralNode>(std::stoi(token.GetLexeme()));
-	}
+		std::vector<ExpressionNodePtr> args;
 
-	// Identifier '(' parameters? ')'
-	PrototypeNodePtr Parser::Prototype()
-	{
-		auto identifier = Identifier();
-
-		Consume(Token::ID::LParen, "Expected '(' token");
-
-		auto parameters = std::vector<std::string>();
-
-		if(!CheckToken(Token::ID::RParen))
+		if(!CheckToken(Token::ID::RightParen))
 		{
-			do
+			while(!CheckToken(Token::ID::RightParen))
 			{
-				parameters.push_back(Consume(Token::ID::Identifier, "Expected identifier").GetLexeme());
-			} while(CheckToken(Token::ID::Comma));
+				args.push_back(ParseExpression());
+
+				if(CheckToken(Token::ID::Comma))
+				{
+					AdvanceToken();
+				}
+			}
 		}
 
-		Consume(Token::ID::RParen, "Expected ')' token");
+		if(CheckToken(Token::ID::RightParen))
+		{
+			Consume(Token::ID::RightParen);
+		}
 
-		return CreateASTNode<PrototypeNode>(identifier, parameters);
+		return CreateASTNode<FunctionCallNode>(callee, args);
 	}
 
-	// '{' statement* '}'
-	BlockNodePtr Parser::Block()
+	MatchExpressionNodePtr Parser::ParseMatch()
 	{
-		Consume(Token::ID::LBrace, "Expected '{' token");
+		Consume(Token::ID::Match);
+
+		auto expression = ParseExpression();
+		Consume(Token::ID::LeftBrace);
+
+		std::vector<MatchCaseNodePtr> cases;
+
+		while(!CheckToken(Token::ID::RightBrace))
+		{
+			auto pattern = ParseExpression();
+			Consume(Token::ID::Arrow, "Expected '->' after match pattern");
+			auto expr = ParseExpression();
+			Consume(Token::ID::Semicolon, "Expected ';' after match case");
+
+			cases.push_back(CreateASTNode<MatchCaseNode>(pattern, expr));
+		}
+
+		Consume(Token::ID::RightBrace);
+
+		return CreateASTNode<MatchExpressionNode>(expression, cases);
+	}
+
+	IfExpressionNodePtr Parser::ParseIf()
+	{
+		Consume(Token::ID::If);
+
+		auto condition = ParseExpression();
+		auto trueBranch = ParseBlock();
+
+		if(CheckToken(Token::ID::Else))
+		{
+			AdvanceToken();
+			auto falseBranch = ParseBlock();
+
+			return CreateASTNode<IfExpressionNode>(condition, trueBranch, falseBranch);
+		}
+
+		return CreateASTNode<IfExpressionNode>(condition, trueBranch);
+	}
+
+	BlockNodePtr Parser::ParseBlock()
+	{
+		Consume(Token::ID::LeftBrace);
 
 		auto block = CreateASTNode<BlockNode>();
 
-		while(!CheckToken(Token::ID::RBrace))
+		while(!CheckToken(Token::ID::RightBrace))
 		{
-			block->AddStatement(Statement());
+			block->AddStatement(ParseStatement());
 		}
 
-		Consume(Token::ID::RBrace, "Expected '}' token");
+		Consume(Token::ID::RightBrace);
 
 		return block;
 	}
 
-	// Identifier
-	IdentifierNodePtr Parser::Identifier()
+	IdentifierNodePtr Parser::ParseIdentifier()
 	{
-		auto token = Consume(Token::ID::Identifier, "Expected identifier");
+		auto token = Consume(Token::ID::Identifier);
 
 		return CreateASTNode<IdentifierNode>(token.GetLexeme());
+	}
+
+	LiteralNodePtr Parser::ParseLiteral()
+	{
+		auto token = AdvanceToken();
+
+		if(token.GetID() == Token::ID::Number)
+		{
+			return CreateASTNode<LiteralNode>(std::stod(token.GetLexeme()));
+		}
+
+		if(token.GetID() == Token::ID::True)
+		{
+			return CreateASTNode<LiteralNode>(true);
+		}
+
+		if(token.GetID() == Token::ID::False)
+		{
+			return CreateASTNode<LiteralNode>(false);
+		}
+
+		ReportError("Literal - Unexpected token");
+
+		return nullptr;
+	}
+
+	PrototypeNodePtr Parser::ParsePrototype(IdentifierNodePtr name)
+	{
+		std::vector<std::string> args;
+
+		Consume(Token::ID::LeftParen);
+
+		if(!CheckToken(Token::ID::RightParen))
+		{
+			while(!CheckToken(Token::ID::RightParen))
+			{
+				auto arg = Consume(Token::ID::Identifier).GetLexeme();
+				args.push_back(arg);
+
+				if(CheckToken(Token::ID::Comma))
+				{
+					AdvanceToken();
+				}
+			}
+		}
+
+		Consume(Token::ID::RightParen);
+
+		return CreateASTNode<PrototypeNode>(name, args);
+	}
+
+	int Parser::GetPrecedence(Token::ID token) const
+	{
+		switch(token)
+		{
+			case Token::ID::Plus:
+			case Token::ID::Minus: return 1;
+			case Token::ID::Asterisk:
+			case Token::ID::Slash: return 2;
+			case Token::ID::Equal:
+			case Token::ID::EqualEqual:
+			case Token::ID::BangEqual:
+			case Token::ID::Less:
+			case Token::ID::LessEqual:
+			case Token::ID::Greater:
+			case Token::ID::GreaterEqual: return 3;
+			case Token::ID::And:
+			case Token::ID::Or: return 4;
+			default: return 0;
+		}
 	}
 
 	bool Parser::CheckToken(Token::ID token) const
@@ -254,7 +360,7 @@ namespace Glyph
 	{
 		if(IsAtEnd())
 		{
-			return {Token::ID::EOI, ""};
+			return {Token::ID::EOI, "", 0, 0};
 		}
 
 		return m_Tokens[m_Current];
@@ -279,9 +385,23 @@ namespace Glyph
 			return AdvanceToken();
 		}
 
-		throw std::runtime_error(message);
+		if(message.empty())
+			ReportError(std::format("Expected token '{}' but got '{}'", magic_enum::enum_name(token),
+									magic_enum::enum_name(PeekToken().GetID())));
+		else
+			ReportError(message);
+
+		throw std::runtime_error("Expected token");
 	}
 
-	bool Parser::IsAtEnd() const { return m_Current >= m_Tokens.size(); }
+	bool Parser::IsAtEnd() const
+	{
+		return m_Current >= m_Tokens.size() || m_Tokens[m_Current].GetID() == Token::ID::EOI;
+	}
 
+	void Parser::ReportError(const std::string& message)
+	{
+		auto token = GetToken();
+		m_Diagnostics.Error(message, token.GetLine(), token.GetColumn());
+	}
 } // namespace Glyph

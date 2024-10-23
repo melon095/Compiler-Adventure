@@ -15,6 +15,7 @@ sources = [
     'Source/Lexer/Lexer.cc',
     'Source/Lexer/Token.cc',
     'Source/Parser/Parser.cc',
+    'Source/Parser/Diagnostics.cc',
 ]
 
 # llvm_dep = cxx.find_library('LLVM', required: true)

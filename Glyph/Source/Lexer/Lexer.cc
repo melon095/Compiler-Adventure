@@ -1,5 +1,7 @@
 #include <Lexer/Lexer.hh>
 
+#include <map>
+
 namespace Glyph
 {
 	Lexer::Lexer(const std::string& input)
@@ -30,6 +32,31 @@ namespace Glyph
 
 		switch(c)
 		{
+			case '(': AddToken(Token::ID::LeftParen); break;
+			case ')': AddToken(Token::ID::RightParen); break;
+			case '{': AddToken(Token::ID::LeftBrace); break;
+			case '}': AddToken(Token::ID::RightBrace); break;
+			case ',': AddToken(Token::ID::Comma); break;
+			case '.': AddToken(Token::ID::Dot); break;
+			case '-': AddToken(Match('>') ? Token::ID::Arrow : Token::ID::Minus); break;
+			case '+': AddToken(Token::ID::Plus); break;
+			case ';': AddToken(Token::ID::Semicolon); break;
+			case '*': AddToken(Token::ID::Asterisk); break;
+			case '!': AddToken(Match('=') ? Token::ID::BangEqual : Token::ID::Bang); break;
+			case '=': AddToken(Match('=') ? Token::ID::EqualEqual : Token::ID::Equal); break;
+			case '<': AddToken(Match('=') ? Token::ID::LessEqual : Token::ID::Less); break;
+			case '>': AddToken(Match('=') ? Token::ID::GreaterEqual : Token::ID::Greater); break;
+			case '/':
+				if(Match('/'))
+				{
+					while(Peek() != '\n' && !IsAtEnd())
+						Advance();
+				}
+				else
+				{
+					AddToken(Token::ID::Slash);
+				}
+				break;
 			case ' ':
 			case '\r':
 			case '\t': break;
@@ -37,69 +64,6 @@ namespace Glyph
 				m_Line++;
 				m_Column = 1;
 				break;
-
-			case '+': AddToken(Token::ID::Plus); break;
-			case '-':
-				{
-					if(Match('>'))
-					{
-						AddToken(Token::ID::Arrow);
-					}
-					else
-					{
-						AddToken(Token::ID::Minus);
-					}
-					break;
-				}
-			case '*': AddToken(Token::ID::Star); break;
-			case '/': AddToken(Token::ID::Slash); break;
-			case '(': AddToken(Token::ID::LParen); break;
-			case ')': AddToken(Token::ID::RParen); break;
-			case '{': AddToken(Token::ID::LBrace); break;
-			case '}': AddToken(Token::ID::RBrace); break;
-			case ';': AddToken(Token::ID::Semicolon); break;
-			case ',': AddToken(Token::ID::Comma); break;
-			case '^': AddToken(Token::ID::Caret); break;
-			case '@': AddToken(Token::ID::At); break;
-			case '?': AddToken(Token::ID::Conditional); break;
-
-			case '<':
-				if(Match('-') && Match('>'))
-				{
-					AddToken(Token::ID::Rocket);
-				}
-				else if(Match('='))
-				{
-					AddToken(Token::ID::LessEqual);
-				}
-				else
-				{
-					AddToken(Token::ID::Less);
-				}
-				break;
-
-			case '>':
-				if(Match('='))
-				{
-					AddToken(Token::ID::GreaterEqual);
-				}
-				else
-				{
-					AddToken(Token::ID::Greater);
-				}
-				break;
-
-			case '=':
-				if(Match('='))
-				{
-					AddToken(Token::ID::Equal);
-				}
-				else
-				{
-					AddToken(Token::ID::Assign);
-				}
-				break;
-
 			default:
 				if(IsDigit(c))
 				{
@@ -111,9 +75,8 @@ namespace Glyph
 				}
 				else
 				{
-					AddToken(Token::ID::Unknown, std::string(1, c));
+					AddToken(Token::ID::Unknown);
 				}
-				break;
 		}
 	}
 
@@ -135,20 +98,40 @@ namespace Glyph
 
 	void Lexer::HandleIdentifier()
 	{
+		static std::map<std::string, Token::ID> keywords = {
+			// clang-format off
+            {"let", Token::ID::Let},
+            {"return", Token::ID::Return},
+            {"match", Token::ID::Match},
+            {"if", Token::ID::If},
+            {"else", Token::ID::Else},
+            {"true", Token::ID::True},
+            {"false", Token::ID::False},
+			// clang-format on
+		};
+
 		while(IsAlphaNumeric(Peek()))
 			Advance();
 
-		auto lexeme = GetLexemeSubstring();
+		std::string lexeme = GetLexemeSubstring();
 
-		if(lexeme == "fun")
-			AddToken(Token::ID::Func);
+		auto it = keywords.find(lexeme);
+		if(it != keywords.end())
+		{
+			AddToken(it->second);
+		}
 		else
+		{
 			AddToken(Token::ID::Identifier, lexeme);
+		}
 	}
 
-	void Lexer::AddToken(Token::ID token) { m_Tokens.emplace_back(token, ""); }
+	void Lexer::AddToken(Token::ID token) { m_Tokens.emplace_back(token, "", m_Line, m_Column); }
 
-	void Lexer::AddToken(Token::ID token, const std::string& literal) { m_Tokens.emplace_back(token, literal); }
+	void Lexer::AddToken(Token::ID token, const std::string& literal)
+	{
+		m_Tokens.emplace_back(token, literal, m_Line, m_Column);
+	}
 
 	bool Lexer::IsAtEnd() const { return m_Current >= m_Source.size(); }
 
@@ -194,7 +177,7 @@ namespace Glyph
 
 	bool Lexer::IsDigit(char c) { return c >= '0' && c <= '9'; }
 
-	bool Lexer::IsAlpha(char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'); }
+	bool Lexer::IsAlpha(char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_'; }
 
 	bool Lexer::IsAlphaNumeric(char c) { return IsAlpha(c) || IsDigit(c); }
 

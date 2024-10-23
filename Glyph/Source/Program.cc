@@ -3,6 +3,7 @@
 #include <Parser/Parser.hh>
 #include <Visitors/ASTPrinterVisitor.hh>
 
+#include <fstream>
 #include <iostream>
 
 using namespace Glyph;
@@ -10,35 +11,41 @@ using namespace Glyph;
 void TestASTPrinterVisitor(void)
 {
 	// clang-format off
-
-	// @x = 42
-    // auto x = VariableDeclarationNodePtr(new VariableDeclarationNode(
-    //     IdentifierNodePtr(new IdentifierNode("x")),
-    //     LiteralNodePtr(new LiteralNode(42))
-    // ));
-    
-	// fun foo(x) x + 1;
-    // auto fun = FunctionDeclarationNodePtr(new FunctionDeclarationNode(
-    //     PrototypeNodePtr(new PrototypeNode(IdentifierNodePtr(new IdentifierNode("foo")), {"x"})),
-    //     BlockNodePtr(BlockNode(BinaryExpressionNodePtr(new BinaryExpressionNode(
-    //         IdentifierNodePtr(new IdentifierNode("x")),
-    //         OperatorNodePtr(new OperatorNode("+")),
-    //         LiteralNodePtr(new LiteralNode(1))
-    //     ))))
-    // ));
-    
-    auto block = std::shared_ptr<BlockNode>(new BlockNode());
-    block->AddStatement(ExpressionStatementNodePtr(new ExpressionStatementNode(
-        BinaryExpressionNodePtr(new BinaryExpressionNode(
-            IdentifierNodePtr(new IdentifierNode("x")),
-            OperatorNodePtr(new OperatorNode("+")),
-            LiteralNodePtr(new LiteralNode(1))
+    // let result = {
+    //     let a = 10;
+    //     let b = 20;
+    //     a + b
+    // }
+    auto* block = new BlockNode();
+    block->AddStatement(LetDeclarationNodePtr(new LetDeclarationNode(
+        IdentifierNodePtr(new IdentifierNode("result")),
+        BlockNodePtr(new BlockNode(
+            std::vector<StatementNodePtr>{
+                LetDeclarationNodePtr(new LetDeclarationNode(
+                    IdentifierNodePtr(new IdentifierNode("a")),
+                    LiteralNodePtr(new LiteralNode(10))
+                )),
+                LetDeclarationNodePtr(new LetDeclarationNode(
+                    IdentifierNodePtr(new IdentifierNode("b")),
+                    LiteralNodePtr(new LiteralNode(20))
+                )),
+                ExpressionStatementNodePtr(new ExpressionStatementNode(
+                    ArithmeticExpressionNodePtr(new ArithmeticExpressionNode(
+                        IdentifierNodePtr(new IdentifierNode("a")),
+                        OperatorNodePtr(new OperatorNode("+")),
+                        IdentifierNodePtr(new IdentifierNode("b"))
+                    ))
+                ))
+            }
         ))
     )));
-    
 
     auto program = ProgramNode();
-    program.AddStatement(std::move(block));
+    program.AddStatement(FunctionDeclarationNodePtr(new FunctionDeclarationNode(
+        PrototypeNodePtr(new PrototypeNode(IdentifierNodePtr(new IdentifierNode("foo")), std::vector<std::string>{"x"})),
+        BlockNodePtr(block)
+    )
+    ));
 
 	// clang-format on
 
@@ -48,13 +55,29 @@ void TestASTPrinterVisitor(void)
 
 void TestLexerParser(void)
 {
-	std::string input = "fun foo(x) -> { x + 1; };\n"
-						"5 @foo <->;\n"
-						"5 > 2 ?\n"
-						"   -> \"True\"\n"
-						"   -> \"False\"\n"
-						"   -> @result;\n"
-						"@result @print <->;";
+	std::string input = R"(
+let result = {
+    let a = 10;
+    let b = 20;
+    return foo(a, b);
+};
+
+let foo = (x, y) -> {
+    return x + y;
+};
+
+match 5+5 {
+    5 ->  { return 10; };
+    10 -> 20; 
+    42 -> {
+        let block_scoped_fun = () -> {
+            return 42;
+        };
+
+        return block_scoped_fun();
+    };
+};
+    )";
 
 	Lexer lexer(input);
 	auto tokens = lexer.Scan();
@@ -67,8 +90,23 @@ void TestLexerParser(void)
 	Parser parser(tokens);
 	auto program = parser.ParseProgram();
 
+	auto diagnostics = parser.GetDiagnostics();
+	if(diagnostics.HasErrors())
+	{
+		std::cerr << "[Parser] Errors" << std::endl;
+		diagnostics.ForEachError(
+			[](auto& message, auto line, auto column)
+			{ std::cerr << "Error: " << message << " at " << line << ":" << column << std::endl; });
+
+		return;
+	}
+
 	ASTPrinterVisitor visitor(std::cout);
 	visitor.Visit(*program);
+
+	std::ofstream file("ast.dot");
+	ASTPrinterVisitor visitor2(file);
+	visitor2.Visit(*program);
 }
 
 int main()

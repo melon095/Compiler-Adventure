@@ -18,6 +18,8 @@ std::ostream& operator<<(std::ostream& out, const Glyph::Token& token)
 		out << token.GetLexeme();
 	}
 
+	out << ", " << token.GetLine() << ", " << token.GetColumn();
+
 	out << ")";
 
 	return out;

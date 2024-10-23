@@ -18,11 +18,21 @@ namespace Glyph
 
 	void ASTPrinterVisitor::VisitProgramNode(ProgramNode& node)
 	{
-		out << std::string(ident, ' ') << "ProgramNode" << std::endl;
+		out << std::string(ident, ' ') << "ProgramNode()" << std::endl;
 		Incr();
 		for(auto& statement : node.GetStatements())
 		{
 			Visit(*statement);
+		}
+		Decr();
+	}
+
+	void ASTPrinterVisitor::VisitExpressionStatementNode(ExpressionStatementNode& node)
+	{
+		out << std::string(ident, ' ') << "ExpressionStatementNode()" << std::endl;
+		Incr();
+		{
+			Visit(*node.GetExpression());
 		}
 		Decr();
 	}
@@ -41,21 +51,55 @@ namespace Glyph
 		out << std::string(ident, ' ') << "StatementNode()" << std::endl;
 	}
 
-	void ASTPrinterVisitor::VisitAssignmentNode(AssignmentNode& node)
+	void ASTPrinterVisitor::VisitLetDeclarationNode(LetDeclarationNode& node)
 	{
-		out << std::string(ident, ' ') << "AssignmentNode(" << node.GetName()->GetName() << ")" << std::endl;
+		out << std::string(ident, ' ') << "LetDeclarationNode()" << std::endl;
 		Incr();
-		Visit(*node.GetExpression());
+		{
+			Visit(*node.GetIdentifier());
+			Visit(*node.GetExpression());
+		}
 		Decr();
 	}
 
-	void ASTPrinterVisitor::VisitBinaryExpressionNode(BinaryExpressionNode& node)
+	void ASTPrinterVisitor::VisitPrototypeNode(PrototypeNode& node)
 	{
-		out << std::string(ident, ' ') << "BinaryExpressionNode(" << magic_enum::enum_name(node.GetOp()->GetOp()) << ")"
-			<< std::endl;
+		out << std::string(ident, ' ') << "PrototypeNode(" << node.GetName()->GetName() << ", [";
+		for(std::size_t i = 0; i < node.GetArgs().size(); i++)
+		{
+			out << node.GetArgs()[i];
+			if(i != node.GetArgs().size() - 1)
+			{
+				out << ", ";
+			}
+		}
+		out << "])" << std::endl;
+	}
+
+	void ASTPrinterVisitor::VisitFunctionDeclarationNode(FunctionDeclarationNode& node)
+	{
+		out << std::string(ident, ' ') << "FunctionDeclarationNode()" << std::endl;
 		Incr();
-		Visit(*node.GetLhs());
-		Visit(*node.GetRhs());
+		{
+			Visit(*node.GetPrototype());
+			Visit(*node.GetBlock());
+		}
+		Decr();
+	}
+
+	void ASTPrinterVisitor::VisitFunctionCallNode(FunctionCallNode& node)
+	{
+		out << std::string(ident, ' ') << "FunctionCallNode()" << std::endl;
+		Incr();
+		{
+			Visit(*node.GetName());
+			Incr();
+			for(auto& arg : node.GetArgs())
+			{
+				Visit(*arg);
+			}
+			Decr();
+		}
 		Decr();
 	}
 
@@ -70,9 +114,91 @@ namespace Glyph
 		Decr();
 	}
 
-	void ASTPrinterVisitor::VisitFunctionCallNode(FunctionCallNode& node)
+	void ASTPrinterVisitor::VisitIdentifierNode(IdentifierNode& node)
 	{
-		out << std::string(ident, ' ') << "FunctionCallNode(" << node.GetName()->GetName() << ")" << std::endl;
+		out << std::string(ident, ' ') << "IdentifierNode(" << node.GetName() << ")" << std::endl;
+	}
+
+	void ASTPrinterVisitor::VisitLiteralNode(LiteralNode& node)
+	{
+		out << std::string(ident, ' ') << "LiteralNode(" << node.GetString() << ")" << std::endl;
+	}
+
+	void ASTPrinterVisitor::VisitIfExpressionNode(IfExpressionNode& node)
+	{
+		out << std::string(ident, ' ') << "IfExpressionNode()" << std::endl;
+		Incr();
+		{
+			Visit(*node.GetCondition());
+			Visit(*node.GetTrueBranch());
+			if(auto& falseBr = node.GetFalseBranch())
+			{
+				Visit(*falseBr);
+			}
+		}
+		Decr();
+	}
+
+	void ASTPrinterVisitor::VisitMatchExpressionNode(MatchExpressionNode& node)
+	{
+		out << std::string(ident, ' ') << "MatchExpressionNode()" << std::endl;
+		Incr();
+		{
+			Visit(*node.GetExpression());
+			out << std::string(ident, ' ') << "MatchCases()" << std::endl;
+			Incr();
+			for(auto& matchCase : node.GetCases())
+			{
+				Visit(*matchCase);
+			}
+			Decr();
+		}
+		Decr();
+	}
+
+	void ASTPrinterVisitor::VisitMatchCaseNode(MatchCaseNode& node)
+	{
+		out << std::string(ident, ' ') << "MatchCaseNode()" << std::endl;
+		Incr();
+		{
+			out << std::string(ident, ' ') << "Pattern()" << std::endl;
+			Incr();
+			{
+				Visit(*node.GetPattern());
+			}
+			Decr();
+			out << std::string(ident, ' ') << "Expression()" << std::endl;
+			Incr();
+			{
+				Visit(*node.GetBlock());
+			}
+			Decr();
+		}
+		Decr();
+	}
+
+	void ASTPrinterVisitor::VisitLambdaExpressionNode(LambdaExpressionNode& node)
+	{
+		out << std::string(ident, ' ') << "LambdaExpressionNode()" << std::endl;
+		Incr();
+		{
+			for(auto& arg : node.GetArgs())
+			{
+				out << std::string(ident, ' ') << arg << std::endl;
+			}
+			Visit(*node.GetBlock());
+		}
+		Decr();
+	}
+
+	void ASTPrinterVisitor::VisitOperatorNode(OperatorNode& node)
+	{
+		out << std::string(ident, ' ') << "OperatorNode(" << magic_enum::enum_name(node.GetOp()) << ")" << std::endl;
+	}
+
+	void ASTPrinterVisitor::VisitArgumentListNode(ArgumentListNode& node)
+	{
+		out << std::string(ident, ' ') << "ArgumentListNode()" << std::endl;
 		Incr();
 		for(auto& arg : node.GetArgs())
 		{
@@ -81,89 +207,25 @@ namespace Glyph
 		Decr();
 	}
 
-	void ASTPrinterVisitor::VisitFunctionDeclarationNode(FunctionDeclarationNode& node)
+	void ASTPrinterVisitor::VisitReturnStatementNode(ReturnStatementNode& node)
 	{
-		out << std::string(ident, ' ') << "FunctionDeclarationNode()" << std::endl;
+		out << std::string(ident, ' ') << "ReturnStatementNode()" << std::endl;
 		Incr();
-		Visit(*node.GetPrototype());
-		Visit(*node.GetBody());
-		Decr();
-	}
-
-	void ASTPrinterVisitor::VisitIdentifierNode(IdentifierNode& node)
-	{
-		out << std::string(ident, ' ') << "IdentifierNode(" << node.GetName() << ")" << std::endl;
-	}
-
-	void ASTPrinterVisitor::VisitLiteralNode(LiteralNode& node)
-	{
-		out << std::string(ident, ' ') << "LiteralNode(" << /*node.GetValue()*/ "TODO" << ")" << std::endl;
-	}
-
-	void ASTPrinterVisitor::VisitOperatorNode(OperatorNode& node)
-	{
-		out << std::string(ident, ' ') << "OperatorNode(" << magic_enum::enum_name(node.GetOp()) << ")" << std::endl;
-	}
-
-	void ASTPrinterVisitor::VisitUnaryExpressionNode(UnaryExpressionNode& node)
-	{
-		out << std::string(ident, ' ') << "UnaryExpressionNode(" << magic_enum::enum_name(node.GetOp()) << ")"
-			<< std::endl;
-		Incr();
-		Visit(*node.GetExpression());
-		Decr();
-	}
-
-	void ASTPrinterVisitor::VisitVariableDeclarationNode(VariableDeclarationNode& node)
-	{
-		out << std::string(ident, ' ') << "VariableDeclarationNode(" << node.GetIdentifier()->GetName() << ")"
-			<< std::endl;
-		Incr();
-		Visit(*node.GetExpression());
-		Decr();
-	}
-
-	void ASTPrinterVisitor::VisitPrototypeNode(PrototypeNode& node)
-	{
-		auto& args = node.GetArgs();
-		auto aSize = args.size();
-		out << std::string(ident, ' ') << "PrototypeNode(" << node.GetName() << ", [";
-		for(std::size_t i = 0; i < aSize; i++)
 		{
-			out << args[i];
-			if(i < aSize - 1)
-			{
-				out << ", ";
-			}
+			Visit(*node.GetExpression());
 		}
-
-		out << "])" << std::endl;
-	}
-
-	void ASTPrinterVisitor::VisitConditionalNode(ConditionalNode& node)
-	{
-		out << std::string(ident, ' ') << "ConditionalNode()" << std::endl;
-		Incr();
-		Visit(*node.GetCondition());
-		Visit(*node.GetTrueBranch());
-		Visit(*node.GetFalseBranch());
 		Decr();
 	}
 
-	void ASTPrinterVisitor::VisitLoopNode(LoopNode& node)
+	void ASTPrinterVisitor::VisitArithmeticExpressionNode(ArithmeticExpressionNode& node)
 	{
-		out << std::string(ident, ' ') << "LoopNode()" << std::endl;
+		out << std::string(ident, ' ') << "ArithmeticExpressionNode()" << std::endl;
 		Incr();
-		Visit(*node.GetCondition());
-		Visit(*node.GetBody());
-		Decr();
-	}
-
-	void ASTPrinterVisitor::VisitExpressionStatementNode(ExpressionStatementNode& node)
-	{
-		out << std::string(ident, ' ') << "ExpressionStatementNode()" << std::endl;
-		Incr();
-		Visit(*node.GetExpression());
+		{
+			Visit(*node.GetLhs());
+			Visit(*node.GetOp());
+			Visit(*node.GetRhs());
+		}
 		Decr();
 	}
 } // namespace Glyph
