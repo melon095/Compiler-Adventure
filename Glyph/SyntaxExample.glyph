@@ -1,48 +1,21 @@
-// Variable Declaration
-@x = 10
+let result = {
+    let a = 10;
+    let b = 20;
+    return foo(a, b);
+};
 
-// Function Declaration
-fun(a, b) -> a + (b * b) -> @Function
+let foo = (x, y) -> {
+    return x + y;
+};
 
-// Execute @Function with 5 and 15 as arguments. Save the result in @result
-5 15 @Function <-> -> @result
+match 5+5 {
+    5 ->  { return 10; };
+    10 -> 20; 
+    42 -> {
+        let block_scoped_fun = () -> {
+            return 42;
+        };
 
-// Eexecute @print with @result as argument
-@result @print <->
-
-// Basic Arithmetic
-5 2 + -> @print
-
-// Loop through the list
-@list = [1, 2, 3, 4, 5]
-^ @list each 
-    @print
-    
-// Conditional
-5 > 10 ?
-    -> "This expression is true" 
-    -> "This expression is false"
-    // Pipe into function and save result
-    // @MyProcessingFunction <-> -> @evaluatedResult 
-
-    // Print the result
-    // @Print <->
-
-// Large Functions
-fun(a) -> {
-    n > 0 ?
-        -> "Positive"
-        -> "Negative"
-    -> @result
-
-    @result @print <->
-
-    @result
-} -> @CheckSign
-
-// Execute @CheckSign with 5 as argument
-5 @CheckSign <-> 
-    == "Positive" ?
-        -> "This is a positive number"
-        -> "This is a negative number"
-    @Print <->
+        return block_scoped_fun();
+    };
+};
