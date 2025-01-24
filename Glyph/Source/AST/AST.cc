@@ -2,12 +2,12 @@
 
 #include "AST.hh"
 #include <map>
+#include <utility>
 
 namespace Glyph
 {
 	namespace
 	{
-
 		OperatorNode::Operator OperatorFromString(const std::string& op)
 		{
 			static std::map<std::string, OperatorNode::Operator> operatorMap
@@ -42,7 +42,7 @@ namespace Glyph
 
 	ExpressionStatementNode::ExpressionStatementNode(ExpressionNodePtr expression)
 		: StatementNode(NodeType::ExpressionStatementNode)
-		, m_expression(expression)
+		, m_expression(std::move(expression))
 	{
 	}
 
@@ -66,8 +66,8 @@ namespace Glyph
 
 	LetDeclarationNode::LetDeclarationNode(IdentifierNodePtr identifier, ExpressionNodePtr expression)
 		: StatementNode(NodeType::LetDeclarationNode)
-		, m_identifier(identifier)
-		, m_expression(expression)
+		, m_identifier(std::move(identifier))
+		, m_expression(std::move(expression))
 	{
 	}
 
@@ -77,7 +77,7 @@ namespace Glyph
 
 	PrototypeNode::PrototypeNode(IdentifierNodePtr name, const std::vector<std::string>& args)
 		: AstNode(NodeType::PrototypeNode)
-		, m_name(name)
+		, m_name(std::move(name))
 		, m_args(args)
 	{
 	}
@@ -88,8 +88,8 @@ namespace Glyph
 
 	FunctionDeclarationNode::FunctionDeclarationNode(PrototypeNodePtr prototype, BlockNodePtr block)
 		: StatementNode(NodeType::FunctionDeclarationNode)
-		, m_prototype(prototype)
-		, m_block(block)
+		, m_prototype(std::move(prototype))
+		, m_block(std::move(block))
 	{
 	}
 
@@ -99,7 +99,7 @@ namespace Glyph
 
 	FunctionCallNode::FunctionCallNode(IdentifierNodePtr name, const std::vector<ExpressionNodePtr>& args)
 		: ExpressionNode(NodeType::FunctionCallNode)
-		, m_name(name)
+		, m_name(std::move(name))
 		, m_args(args)
 	{
 	}
@@ -126,9 +126,9 @@ namespace Glyph
 
 	ArithmeticExpressionNode::ArithmeticExpressionNode(ExpressionNodePtr lhs, OperatorNodePtr op, ExpressionNodePtr rhs)
 		: ExpressionNode(NodeType::ArithmeticExpressionNode)
-		, m_lhs(lhs)
-		, m_op(op)
-		, m_rhs(rhs)
+		, m_lhs(std::move(lhs))
+		, m_op(std::move(op))
+		, m_rhs(std::move(rhs))
 	{
 	}
 
@@ -140,16 +140,16 @@ namespace Glyph
 
 	IfExpressionNode::IfExpressionNode(ExpressionNodePtr condition, BlockNodePtr trueBranch, BlockNodePtr falseBranch)
 		: ExpressionNode(NodeType::IfExpressionNode)
-		, m_condition(condition)
-		, m_trueBranch(trueBranch)
-		, m_falseBranch(falseBranch)
+		, m_condition(std::move(condition))
+		, m_trueBranch(std::move(trueBranch))
+		, m_falseBranch(std::move(falseBranch))
 	{
 	}
 
 	IfExpressionNode::IfExpressionNode(ExpressionNodePtr condition, BlockNodePtr trueBranch)
 		: ExpressionNode(NodeType::IfExpressionNode)
-		, m_condition(condition)
-		, m_trueBranch(trueBranch)
+		, m_condition(std::move(condition))
+		, m_trueBranch(std::move(trueBranch))
 		, m_falseBranch(std::make_shared<BlockNode>())
 	{
 	}
@@ -162,7 +162,7 @@ namespace Glyph
 
 	MatchExpressionNode::MatchExpressionNode(ExpressionNodePtr expression, const std::vector<MatchCaseNodePtr>& cases)
 		: ExpressionNode(NodeType::MatchExpressionNode)
-		, m_expression(expression)
+		, m_expression(std::move(expression))
 		, m_cases(cases)
 	{
 	}
@@ -173,8 +173,8 @@ namespace Glyph
 
 	MatchCaseNode::MatchCaseNode(ExpressionNodePtr pattern, ExpressionNodePtr block)
 		: AstNode(NodeType::MatchCaseNode)
-		, m_pattern(pattern)
-		, m_block(block)
+		, m_pattern(std::move(pattern))
+		, m_block(std::move(block))
 	{
 	}
 
@@ -185,7 +185,7 @@ namespace Glyph
 	LambdaExpressionNode::LambdaExpressionNode(const std::vector<std::string>& args, BlockNodePtr block)
 		: ExpressionNode(NodeType::LambdaExpressionNode)
 		, m_args(args)
-		, m_block(block)
+		, m_block(std::move(block))
 	{
 	}
 
@@ -193,74 +193,27 @@ namespace Glyph
 
 	const BlockNodePtr& LambdaExpressionNode::GetBlock() const { return m_block; }
 
-	IdentifierNode::IdentifierNode(const std::string& name)
+	IdentifierNode::IdentifierNode(std::string name)
 		: ExpressionNode(NodeType::IdentifierNode)
-		, m_name(name)
+		, m_name(std::move(name))
 	{
 	}
 
 	const std::string& IdentifierNode::GetName() const { return m_name; }
 
-	LiteralNode::LiteralNode(const int value)
-		: ExpressionNode(NodeType::LiteralNode)
-		, m_value(value)
-
-	{
-	}
-
-	LiteralNode::LiteralNode(const double value)
+	LiteralNode::LiteralNode(double value)
 		: ExpressionNode(NodeType::LiteralNode)
 		, m_value(value)
 	{
 	}
 
-	LiteralNode::LiteralNode(const bool value)
+	LiteralNode::LiteralNode(bool value)
 		: ExpressionNode(NodeType::LiteralNode)
 		, m_value(value)
 	{
 	}
 
-	LiteralNode::LiteralNode(const std::string& value)
-		: ExpressionNode(NodeType::LiteralNode)
-		, m_value(value)
-	{
-	}
-
-	std::string LiteralNode::GetString() const
-	{
-		if(IsInt())
-		{
-			return std::to_string(std::get<int>(m_value));
-		}
-		else if(IsDouble())
-		{
-			return std::to_string(std::get<double>(m_value));
-		}
-		else if(IsBool())
-		{
-			return std::get<bool>(m_value) ? "true" : "false";
-		}
-		else if(IsString())
-		{
-			return std::get<std::string>(m_value);
-		}
-
-		return "Unknown";
-	}
-
-	int LiteralNode::GetInt() const { return std::get<int>(m_value); }
-
-	double LiteralNode::GetDouble() const { return std::get<double>(m_value); }
-
-	bool LiteralNode::GetBool() const { return std::get<bool>(m_value); }
-
-	bool LiteralNode::IsInt() const { return std::holds_alternative<int>(m_value); }
-
-	bool LiteralNode::IsDouble() const { return std::holds_alternative<double>(m_value); }
-
-	bool LiteralNode::IsBool() const { return std::holds_alternative<bool>(m_value); }
-
-	bool LiteralNode::IsString() const { return std::holds_alternative<std::string>(m_value); }
+	Value LiteralNode::GetValue() const { return m_value; }
 
 	OperatorNode::OperatorNode(Operator op)
 		: AstNode(NodeType::OperatorNode)
@@ -286,7 +239,7 @@ namespace Glyph
 
 	ReturnStatementNode::ReturnStatementNode(ExpressionNodePtr expression)
 		: StatementNode(NodeType::ReturnStatementNode)
-		, m_expression(expression)
+		, m_expression(std::move(expression))
 	{
 	}
 

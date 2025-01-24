@@ -9,7 +9,7 @@ namespace Glyph
 {
 	class AstNode;
 
-	class ASTPrinterVisitor : public IASTVisitor
+	class ASTPrinterVisitor : public IASTVisitor<void>
 	{
 	  public:
 		ASTPrinterVisitor(std::ostream& stream);

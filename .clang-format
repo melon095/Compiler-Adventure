@@ -20,7 +20,7 @@ SortIncludes: CaseSensitive
 SpaceBeforeParens: Never
 SpacesInContainerLiterals: false
 SpacesBeforeTrailingComments: 1
-Standard: c++17
+Standard: c++20
 BreakBeforeBinaryOperators: All
 UseTab: Always
 IndentWidth: 4
@@ -38,5 +38,19 @@ SpaceBeforeCpp11BracedList: true
 SpaceBeforeInheritanceColon: true
 SpaceBeforeCtorInitializerColon: true
 LineEnding: LF
-BreakBeforeBraces: Allman
+BraceWrapping:
+  AfterEnum: true
+  AfterStruct: true
+  AfterUnion: true
+  AfterClass: true
+  AfterControlStatement: true
+  AfterNamespace: true
+  AfterCaseLabel: true
+  AfterFunction: true
+  BeforeElse: true
+  BeforeWhile: true
+  BeforeCatch: true
+  SplitEmptyFunction: true
+  SplitEmptyNamespace: true
+BreakBeforeBraces: Custom
 BreakConstructorInitializers: BeforeComma

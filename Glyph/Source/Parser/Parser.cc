@@ -4,20 +4,22 @@
 #include <format>
 #include <iostream>
 
-#include <magic_enum.hpp>
+#include <magic_enum/magic_enum.hpp>
+#include <memory>
+#include <utility>
 
 namespace Glyph
 {
 	Parser::Parser(Tokens tokens)
 		: m_Diagnostics()
-		, m_Tokens(tokens)
+		, m_Tokens(std::move(tokens))
 		, m_Current(0)
 	{
 	}
 
 	ProgramNodePtr Parser::ParseProgram()
 	{
-		auto program = ProgramNodePtr(new ProgramNode());
+		auto program = std::make_shared<ProgramNode>();
 
 		try
 		{

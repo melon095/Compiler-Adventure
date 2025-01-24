@@ -1,6 +1,6 @@
 #include <Visitors/ASTPrinterVisitor.hh>
 
-#include <magic_enum.hpp>
+#include <magic_enum/magic_enum.hpp>
 
 #include <iostream>
 
@@ -121,7 +121,7 @@ namespace Glyph
 
 	void ASTPrinterVisitor::VisitLiteralNode(LiteralNode& node)
 	{
-		out << std::string(ident, ' ') << "LiteralNode(" << node.GetString() << ")" << std::endl;
+		out << std::string(ident, ' ') << "LiteralNode(" << node.GetValue().ToString() << ")" << std::endl;
 	}
 
 	void ASTPrinterVisitor::VisitIfExpressionNode(IfExpressionNode& node)

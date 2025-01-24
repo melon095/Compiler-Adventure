@@ -1,6 +1,6 @@
 #include <Lexer/Token.hh>
 
-#include <magic_enum.hpp>
+#include <magic_enum/magic_enum.hpp>
 
 std::ostream& operator<<(std::ostream& out, const Glyph::Token& token)
 {

@@ -3,9 +3,9 @@
 namespace Glyph
 {
 #define VISIT_CASE(name)                                                                                               \
-	case NodeType::name: Visit##name(static_cast<name&>(node)); break;
+	case NodeType::name: Visit##name(dynamic_cast<name&>(node)); break;
 
-	void IASTVisitor::Visit(AstNode& node)
+	void IASTVisitor<void>::Visit(AstNode& node)
 	{
 		switch(node.GetType())
 		{

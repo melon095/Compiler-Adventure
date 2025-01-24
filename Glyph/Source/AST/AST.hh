@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Runtime/Value.hh>
+
 #include <memory>
 #include <string>
 #include <variant>
@@ -52,8 +54,8 @@ namespace Glyph
 	  public:
 		virtual ~AstNode() = default;
 
-		NodeType GetType() const;
-		bool IsType(NodeType type) const;
+		[[nodiscard]] NodeType GetType() const;
+		[[nodiscard]] bool IsType(NodeType type) const;
 
 		template<typename TClass> bool Is() const { return dynamic_cast<const TClass*>(this) != nullptr; }
 		template<typename TClass> TClass* As() { return dynamic_cast<TClass*>(this); }
@@ -68,21 +70,21 @@ namespace Glyph
 	class ExpressionNode : public AstNode
 	{
 	  protected:
-		ExpressionNode(NodeType type);
+		explicit ExpressionNode(NodeType type);
 	};
 
 	class StatementNode : public AstNode
 	{
 	  protected:
-		StatementNode(NodeType type);
+		explicit StatementNode(NodeType type);
 	};
 
 	class ExpressionStatementNode : public StatementNode
 	{
 	  public:
-		ExpressionStatementNode(ExpressionNodePtr expression);
+		explicit ExpressionStatementNode(ExpressionNodePtr expression);
 
-		const ExpressionNodePtr& GetExpression() const;
+		[[nodiscard]] const ExpressionNodePtr& GetExpression() const;
 
 	  private:
 		ExpressionNodePtr m_expression;
@@ -92,7 +94,7 @@ namespace Glyph
 	{
 	  public:
 		ProgramNode();
-		ProgramNode(const std::vector<StatementNodePtr>& statements);
+		explicit ProgramNode(const std::vector<StatementNodePtr>& statements);
 
 		void AddStatement(StatementNodePtr statement);
 		std::vector<StatementNodePtr>& GetStatements();
@@ -106,8 +108,8 @@ namespace Glyph
 	  public:
 		LetDeclarationNode(IdentifierNodePtr identifier, ExpressionNodePtr expression);
 
-		const IdentifierNodePtr& GetIdentifier() const;
-		const ExpressionNodePtr& GetExpression() const;
+		[[nodiscard]] const IdentifierNodePtr& GetIdentifier() const;
+		[[nodiscard]] const ExpressionNodePtr& GetExpression() const;
 
 	  private:
 		IdentifierNodePtr m_identifier;
@@ -119,8 +121,8 @@ namespace Glyph
 	  public:
 		PrototypeNode(IdentifierNodePtr name, const std::vector<std::string>& args);
 
-		const IdentifierNodePtr& GetName() const;
-		const std::vector<std::string>& GetArgs() const;
+		[[nodiscard]] const IdentifierNodePtr& GetName() const;
+		[[nodiscard]] const std::vector<std::string>& GetArgs() const;
 
 	  private:
 		IdentifierNodePtr m_name;
@@ -132,8 +134,8 @@ namespace Glyph
 	  public:
 		FunctionDeclarationNode(PrototypeNodePtr prototype, BlockNodePtr block);
 
-		const PrototypeNodePtr& GetPrototype() const;
-		const BlockNodePtr& GetBlock() const;
+		[[nodiscard]] const PrototypeNodePtr& GetPrototype() const;
+		[[nodiscard]] const BlockNodePtr& GetBlock() const;
 
 	  private:
 		PrototypeNodePtr m_prototype;
@@ -145,8 +147,8 @@ namespace Glyph
 	  public:
 		FunctionCallNode(IdentifierNodePtr name, const std::vector<ExpressionNodePtr>& args);
 
-		const IdentifierNodePtr& GetName() const;
-		const std::vector<ExpressionNodePtr>& GetArgs() const;
+		[[nodiscard]] const IdentifierNodePtr& GetName() const;
+		[[nodiscard]] const std::vector<ExpressionNodePtr>& GetArgs() const;
 
 	  private:
 		IdentifierNodePtr m_name;
@@ -160,7 +162,7 @@ namespace Glyph
 		BlockNode(const std::vector<StatementNodePtr>& statements);
 
 		void AddStatement(StatementNodePtr statement);
-		const std::vector<StatementNodePtr>& GetStatements() const;
+		[[nodiscard]] const std::vector<StatementNodePtr>& GetStatements() const;
 
 	  private:
 		std::vector<StatementNodePtr> m_statements;
@@ -171,9 +173,9 @@ namespace Glyph
 	  public:
 		ArithmeticExpressionNode(ExpressionNodePtr lhs, OperatorNodePtr op, ExpressionNodePtr rhs);
 
-		const ExpressionNodePtr& GetLhs() const;
-		const OperatorNodePtr& GetOp() const;
-		const ExpressionNodePtr& GetRhs() const;
+		[[nodiscard]] const ExpressionNodePtr& GetLhs() const;
+		[[nodiscard]] const OperatorNodePtr& GetOp() const;
+		[[nodiscard]] const ExpressionNodePtr& GetRhs() const;
 
 	  private:
 		ExpressionNodePtr m_lhs;
@@ -187,9 +189,9 @@ namespace Glyph
 		IfExpressionNode(ExpressionNodePtr condition, BlockNodePtr trueBranch, BlockNodePtr falseBranch);
 		IfExpressionNode(ExpressionNodePtr condition, BlockNodePtr trueBranch);
 
-		const ExpressionNodePtr& GetCondition() const;
-		const BlockNodePtr& GetTrueBranch() const;
-		const BlockNodePtr& GetFalseBranch() const;
+		[[nodiscard]] const ExpressionNodePtr& GetCondition() const;
+		[[nodiscard]] const BlockNodePtr& GetTrueBranch() const;
+		[[nodiscard]] const BlockNodePtr& GetFalseBranch() const;
 
 	  private:
 		ExpressionNodePtr m_condition;
@@ -202,8 +204,8 @@ namespace Glyph
 	  public:
 		MatchExpressionNode(ExpressionNodePtr expression, const std::vector<MatchCaseNodePtr>& cases);
 
-		const ExpressionNodePtr& GetExpression() const;
-		const std::vector<MatchCaseNodePtr>& GetCases() const;
+		[[nodiscard]] const ExpressionNodePtr& GetExpression() const;
+		[[nodiscard]] const std::vector<MatchCaseNodePtr>& GetCases() const;
 
 	  private:
 		ExpressionNodePtr m_expression;
@@ -215,8 +217,8 @@ namespace Glyph
 	  public:
 		MatchCaseNode(ExpressionNodePtr pattern, ExpressionNodePtr block);
 
-		const ExpressionNodePtr& GetPattern() const;
-		const ExpressionNodePtr& GetBlock() const;
+		[[nodiscard]] const ExpressionNodePtr& GetPattern() const;
+		[[nodiscard]] const ExpressionNodePtr& GetBlock() const;
 
 	  private:
 		ExpressionNodePtr m_pattern;
@@ -228,8 +230,8 @@ namespace Glyph
 	  public:
 		LambdaExpressionNode(const std::vector<std::string>& args, BlockNodePtr block);
 
-		const std::vector<std::string>& GetArgs() const;
-		const BlockNodePtr& GetBlock() const;
+		[[nodiscard]] const std::vector<std::string>& GetArgs() const;
+		[[nodiscard]] const BlockNodePtr& GetBlock() const;
 
 	  private:
 		std::vector<std::string> m_args;
@@ -239,9 +241,9 @@ namespace Glyph
 	class IdentifierNode : public ExpressionNode
 	{
 	  public:
-		IdentifierNode(const std::string& name);
+		explicit IdentifierNode(std::string name);
 
-		const std::string& GetName() const;
+		[[nodiscard]] const std::string& GetName() const;
 
 	  private:
 		std::string m_name;
@@ -250,23 +252,13 @@ namespace Glyph
 	class LiteralNode : public ExpressionNode
 	{
 	  public:
-		LiteralNode(const int value);
-		LiteralNode(const double value);
-		LiteralNode(const bool value);
-		LiteralNode(const std::string& value);
+		explicit LiteralNode(double value);
+		explicit LiteralNode(bool value);
 
-		int GetInt() const;
-		double GetDouble() const;
-		bool GetBool() const;
-		std::string GetString() const;
-
-		bool IsInt() const;
-		bool IsDouble() const;
-		bool IsBool() const;
-		bool IsString() const;
+		Value GetValue() const;
 
 	  private:
-		std::variant<int, double, bool, std::string> m_value;
+		Value m_value;
 	};
 
 	class OperatorNode : public AstNode
@@ -288,10 +280,10 @@ namespace Glyph
 		};
 
 	  public:
-		OperatorNode(Operator op);
-		OperatorNode(const std::string& op);
+		explicit OperatorNode(Operator op);
+		explicit OperatorNode(const std::string& op);
 
-		Operator GetOp() const;
+		[[nodiscard]] Operator GetOp() const;
 
 	  private:
 		Operator m_op;
@@ -300,9 +292,9 @@ namespace Glyph
 	class ArgumentListNode : public AstNode
 	{
 	  public:
-		ArgumentListNode(const std::vector<ExpressionNodePtr>& args);
+		explicit ArgumentListNode(const std::vector<ExpressionNodePtr>& args);
 
-		const std::vector<ExpressionNodePtr>& GetArgs() const;
+		[[nodiscard]] const std::vector<ExpressionNodePtr>& GetArgs() const;
 
 	  private:
 		std::vector<ExpressionNodePtr> m_args;
@@ -311,9 +303,9 @@ namespace Glyph
 	class ReturnStatementNode : public StatementNode
 	{
 	  public:
-		ReturnStatementNode(ExpressionNodePtr expression);
+		explicit ReturnStatementNode(ExpressionNodePtr expression);
 
-		const ExpressionNodePtr& GetExpression() const;
+		[[nodiscard]] const ExpressionNodePtr& GetExpression() const;
 
 	  private:
 		ExpressionNodePtr m_expression;

@@ -1,10 +1,15 @@
 #include <AST/AST.hh>
+#include <Bytecode/BytecodeCompilerVisitor.hh>
+#include <Bytecode/BytecodeInstruction.hh>
 #include <Lexer/Lexer.hh>
+#include <Macros.hh>
 #include <Parser/Parser.hh>
 #include <Visitors/ASTPrinterVisitor.hh>
 
 #include <fstream>
 #include <iostream>
+
+#include <magic_enum/magic_enum.hpp>
 
 using namespace Glyph;
 
@@ -23,11 +28,11 @@ void TestASTPrinterVisitor(void)
             std::vector<StatementNodePtr>{
                 LetDeclarationNodePtr(new LetDeclarationNode(
                     IdentifierNodePtr(new IdentifierNode("a")),
-                    LiteralNodePtr(new LiteralNode(10))
+                    LiteralNodePtr(new LiteralNode(10.0))
                 )),
                 LetDeclarationNodePtr(new LetDeclarationNode(
                     IdentifierNodePtr(new IdentifierNode("b")),
-                    LiteralNodePtr(new LiteralNode(20))
+                    LiteralNodePtr(new LiteralNode(20.0))
                 )),
                 ExpressionStatementNodePtr(new ExpressionStatementNode(
                     ArithmeticExpressionNodePtr(new ArithmeticExpressionNode(
@@ -94,9 +99,9 @@ match 5+5 {
 	if(diagnostics.HasErrors())
 	{
 		std::cerr << "[Parser] Errors" << std::endl;
-		diagnostics.ForEachError(
-			[](auto& message, auto line, auto column)
-			{ std::cerr << "Error: " << message << " at " << line << ":" << column << std::endl; });
+		diagnostics.ForEachError([](auto& message, auto line, auto column) {
+			std::cerr << "Error: " << message << " at " << line << ":" << column << std::endl;
+		});
 
 		return;
 	}
@@ -109,8 +114,97 @@ match 5+5 {
 	visitor2.Visit(*program);
 }
 
+absl::Status TestBytecode(void)
+{
+	ASTPrinterVisitor astVisitor(std::cout);
+
+	std::string input = R"(
+    let a = 10;
+    let b = 20;
+
+    a + b;
+    )";
+
+	// Load Constant Integer 10
+	// Store Local 'a'
+	// Load Constant Integer 20
+	// Store Local 'b'
+	// Load Local 'a'
+	// Load Local 'b'
+	// Add Operation
+	// Return
+
+	Lexer lexer(input);
+	auto tokens = lexer.Scan();
+
+	Parser parser(tokens);
+	auto program = parser.ParseProgram();
+
+	auto diagnostics = parser.GetDiagnostics();
+	if(diagnostics.HasErrors())
+	{
+		std::cerr << "[Parser] Errors" << std::endl;
+		diagnostics.ForEachError([](auto& message, auto line, auto column) {
+			std::cerr << "Error: " << message << " at " << line << ":" << column << std::endl;
+		});
+
+		return absl::OkStatus();
+	}
+
+	using namespace Bytecode;
+
+	BytecodeCompiler compiler {};
+	BytecodeCompilerVisitor visitor(std::cout);
+	if(auto result = visitor.Visit(compiler, *program); !result.ok())
+	{
+		std::cout << "Bytecode Compiler Error: " << result.Status << std::endl;
+
+		astVisitor.Visit(const_cast<AstNode&>(*result.Node));
+	}
+
+	TRY(compiler.Emit<EndInstruction>());
+
+	int programCounter = 0;
+	auto* bytecode = compiler.m_Chunk.Bytecode();
+
+#define NEXT(instr) programCounter += sizeof(instr);
+	auto i = new EndInstruction();
+	while(true)
+	{
+		auto opcode = static_cast<Opcode>(bytecode[programCounter]);
+
+		switch(opcode)
+		{
+			case Opcode::LOAD_CONST:
+				{
+					auto& instruction = *reinterpret_cast<LoadConstInstruction*>(&bytecode[programCounter]);
+					auto constant = TRY_RET(compiler.m_Chunk.GetConstantTable().GetValue(instruction.Index()));
+
+					std::cout << instruction.ToString() << " " << constant->ToString() << std::endl;
+
+					NEXT(LoadConstInstruction);
+				}
+				break;
+			case Opcode::END:
+				{
+					auto& instruction = *reinterpret_cast<EndInstruction*>(&bytecode[programCounter]);
+
+					std::cout << instruction.ToString() << std::endl;
+
+					goto end;
+				}
+
+			default: std::cerr << "Opcode not implemented: " << magic_enum::enum_name(opcode) << std::endl;
+		}
+	}
+end:
+
+	return absl::OkStatus();
+}
+
 int main()
 {
-	TestASTPrinterVisitor();
-	TestLexerParser();
+	// TestASTPrinterVisitor();
+	//	TestLexerParser();
+	MUST(TestBytecode());
 }
